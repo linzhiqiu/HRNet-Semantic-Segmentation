@@ -162,7 +162,6 @@ class BaseDataset(data.Dataset):
         image = self.random_brightness(image)
         image = self.input_transform(image)
         label = self.label_transform(label)
-
         image = image.transpose((2, 0, 1))
 
         if is_flip:
@@ -189,7 +188,7 @@ class BaseDataset(data.Dataset):
 
     def inference(self, config, model, image, flip=False):
         size = image.size()
-        pred = model(image)
+        pred = model(image.cuda())
 
         if config.MODEL.NUM_OUTPUTS > 1:
             pred = pred[config.TEST.OUTPUT_INDEX]
@@ -200,8 +199,8 @@ class BaseDataset(data.Dataset):
         )
 
         if flip:
-            flip_img = image.numpy()[:, :, :, ::-1]
-            flip_output = model(torch.from_numpy(flip_img.copy()))
+            flip_img = image.cpu().numpy()[:, :, :, ::-1]
+            flip_output = model(torch.from_numpy(flip_img.copy()).cuda())
 
             if config.MODEL.NUM_OUTPUTS > 1:
                 flip_output = flip_output[config.TEST.OUTPUT_INDEX]

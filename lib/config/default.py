@@ -59,6 +59,7 @@ _C.DATASET.ROOT = ''
 _C.DATASET.DATASET = 'cityscapes'
 _C.DATASET.NUM_CLASSES = 19
 _C.DATASET.TRAIN_SET = 'list/cityscapes/train.lst'
+_C.DATASET.VAL_SET = 'list/cityscapes/train.lst'
 _C.DATASET.EXTRA_TRAIN_SET = ''
 _C.DATASET.TEST_SET = 'list/cityscapes/val.lst'
 
@@ -96,6 +97,8 @@ _C.TRAIN.END_EPOCH = 484
 _C.TRAIN.EXTRA_EPOCH = 0
 
 _C.TRAIN.RESUME = False
+
+_C.TRAIN.CLASS_INVERSE_WEIGHTING = False
 
 _C.TRAIN.BATCH_SIZE_PER_GPU = 32
 _C.TRAIN.SHUFFLE = True
