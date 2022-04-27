@@ -60,7 +60,8 @@ def download_from_google_drive(save_dir,
     dataset_dir = os.path.join(save_dir, name)
     if not os.path.exists(dataset_dir):
         zip_path = os.path.join(save_dir, f'{name}.zip')
-        gdrive_url = f"https://drive.google.com/u/0/uc?id={gdrive_id}"
+        # gdrive_url = f"https://drive.google.com/u/0/uc?id={gdrive_id}"
+        gdrive_url = f"https://drive.google.com/u/0/uc?export=download&confirm=pbef&id={gdrive_id}"
         gdown.download(gdrive_url, zip_path, quiet=False)
         gdown.cached_download(gdrive_url, zip_path,
                               md5=md5)
