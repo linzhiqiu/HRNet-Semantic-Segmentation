@@ -4,7 +4,8 @@ import gdown
 import os
 import argparse
 
-MAPILLARY_GDRIVE_ID = "1MR7M-as-stOIog2EyhNXwnKKC9-aXXiM"
+# MAPILLARY_GDRIVE_ID = "1MR7M-as-stOIog2EyhNXwnKKC9-aXXiM"
+MAPILLARY_GDRIVE_ID = "1YLtZEzPq2sZkdbTkCtoUhrct0VwASKsZ"
 MAPILLARY_MD5 = "a821a7620adfa4a73ca2ec00c16fd054"
 
 def parse_args():
@@ -61,7 +62,10 @@ def download_from_google_drive(save_dir,
     if not os.path.exists(dataset_dir):
         zip_path = os.path.join(save_dir, f'{name}.zip')
         # gdrive_url = f"https://drive.google.com/u/0/uc?id={gdrive_id}"
-        gdrive_url = f"https://drive.google.com/u/0/uc?export=download&confirm=pbef&id={gdrive_id}"
+        gdrive_url = f"https://drive.google.com/uc?export=download&confirm=t&id={gdrive_id}"
+        # gdrive_url = f"https://drive.google.com/u/0/uc?id={gdrive_id}&export=download&confirm=t"
+        print(f"Google drive id is {gdrive_url}")
+        # gdrive_url = f"https://drive.google.com/u/0/uc?export=download&confirm=pbef&id={gdrive_id}"
         gdown.download(gdrive_url, zip_path, quiet=False)
         gdown.cached_download(gdrive_url, zip_path,
                               md5=md5)

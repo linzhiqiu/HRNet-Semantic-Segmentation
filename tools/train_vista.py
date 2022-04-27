@@ -86,9 +86,10 @@ def main():
     cudnn.deterministic = config.CUDNN.DETERMINISTIC
     cudnn.enabled = config.CUDNN.ENABLED
     gpus = list(config.GPUS)
-    distributed = args.local_rank >= 0
+    local_rank = int(os.environ["LOCAL_RANK"])
+    distributed = local_rank >= 0
     if distributed:
-        device = torch.device('cuda:{}'.format(args.local_rank))    
+        device = torch.device('cuda:{}'.format(local_rank))    
         torch.cuda.set_device(device)
         torch.distributed.init_process_group(
             backend="nccl", init_method="env://",
@@ -97,19 +98,20 @@ def main():
     # build model
     model = eval('models.'+config.MODEL.NAME +
                  '.get_seg_model')(config)
+    
     # dump_input = torch.rand(
     #     (1, 3, config.TRAIN.IMAGE_SIZE[1], config.TRAIN.IMAGE_SIZE[0])
     # )
     # logger.info(get_model_summary(model.cuda(), dump_input.cuda()))
 
     # copy model file
-    if distributed and args.local_rank == 0:
+    if distributed and local_rank == 0:
         this_dir = os.path.dirname(__file__)
         models_dst_dir = os.path.join(final_output_dir, 'models')
         # if os.path.exists(models_dst_dir):
         #     shutil.rmtree(models_dst_dir)
         # shutil.copytree(os.path.join(this_dir, '../lib/models'), models_dst_dir)
-        print(f"copy to {this_dir} with models_dst_dir being {models_dst_dir}")
+        # print(f"copy to {this_dir} with models_dst_dir being {models_dst_dir}")
     if distributed:
         batch_size = config.TRAIN.BATCH_SIZE_PER_GPU
     else:
@@ -154,14 +156,14 @@ def main():
                         base_size=config.TEST.BASE_SIZE,
                         crop_size=test_size,
                         downsample_rate=1)
-    # val_sampler = get_sampler(val_dataset)
+    val_sampler = get_sampler(val_dataset)
     valloader = torch.utils.data.DataLoader(
         val_dataset,
         batch_size=test_batch_size,
         shuffle=False,
         num_workers=config.WORKERS,
-        pin_memory=True,)
-        # sampler=val_sampler)
+        pin_memory=True,
+        sampler=val_sampler)
     # import pdb; pdb.set_trace()
     test_dataset = eval('datasets.'+config.DATASET.DATASET)(
                         root=config.DATASET.ROOT,
@@ -173,14 +175,14 @@ def main():
                         crop_size=test_size,
                         downsample_rate=1)
     
-    # test_sampler = get_sampler(test_dataset)
+    test_sampler = get_sampler(test_dataset)
     testloader = torch.utils.data.DataLoader(
         test_dataset,
         batch_size=test_batch_size,
         shuffle=False,
         num_workers=config.WORKERS,
-        pin_memory=True,)
-        # sampler=test_sampler)
+        pin_memory=True,
+        sampler=test_sampler)
 
     # criterion
     if config.LOSS.USE_OHEM:
@@ -197,9 +199,9 @@ def main():
         model = model.to(device)
         model = torch.nn.parallel.DistributedDataParallel(
             model,
-            # find_unused_parameters=True,
-            device_ids=[args.local_rank],
-            output_device=args.local_rank
+            find_unused_parameters=True,
+            device_ids=[local_rank],
+            output_device=local_rank
         )
     else:
         model = nn.DataParallel(model, device_ids=gpus).cuda()
@@ -271,7 +273,7 @@ def main():
         print('Minutes for training: %d' % np.int((-epoch_time+timeit.default_timer())/60))
 
         
-        if args.local_rank <= 0:
+        if local_rank <= 0:
             epoch_time = timeit.default_timer()
             mean_IoU, IoU_array, pixel_acc, mean_acc = validate_vista(config, val_dataset, valloader, model, writer_dict, phase='valid')
             print('Minutes for Validation: %d' % np.int((-epoch_time+timeit.default_timer())/60))
@@ -310,7 +312,7 @@ def main():
         # if distributed:
         #     torch.distributed.barrier()
     
-    if args.local_rank <= 0:
+    if local_rank <= 0:
 
         torch.save(model.module.state_dict(),
                 os.path.join(final_output_dir, 'final_state.pth'))

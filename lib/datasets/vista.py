@@ -76,6 +76,7 @@ class Vista(BaseDataset):
                 print(f"Loading from {class_weights_path}")
                 self.class_weights = torch.load(class_weights_path).cuda()
                 print(f"Loaded from {class_weights_path}")
+                print(self.class_weights)
             else:
                 self.class_weights = torch.zeros(self.num_classes).cuda()
                 for f in tqdm(self.files):
