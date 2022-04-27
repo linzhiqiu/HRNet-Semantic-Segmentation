@@ -1,0 +1,468 @@
+2022-04-27 03:18:45,326 Namespace(cfg='experiments/vista_v2_0/v2_0_2090_all.yaml', seed=304, local_rank=-1, opts=[])
+2022-04-27 03:18:45,327 AUTO_RESUME: False
+CUDNN:
+  BENCHMARK: True
+  DETERMINISTIC: False
+  ENABLED: True
+DATASET:
+  DATASET: vista_v2_0
+  EXTRA_TRAIN_SET: 
+  NUM_CLASSES: 116
+  ROOT: /scratch/mapillary_vistas
+  TEST_SET: data/list/vista_v2_0/test.lst
+  TRAIN_SET: data/list/vista_v2_0/train.lst
+  VAL_SET: data/list/vista_v2_0/val.lst
+DEBUG:
+  DEBUG: False
+  SAVE_BATCH_IMAGES_GT: False
+  SAVE_BATCH_IMAGES_PRED: False
+  SAVE_HEATMAPS_GT: False
+  SAVE_HEATMAPS_PRED: False
+GPUS: (0, 1, 2, 3)
+LOG_DIR: log
+LOSS:
+  BALANCE_WEIGHTS: [0.4, 1]
+  CLASS_BALANCE: False
+  OHEMKEEP: 131072
+  OHEMTHRES: 0.9
+  USE_OHEM: False
+MODEL:
+  ALIGN_CORNERS: True
+  EXTRA:
+    FINAL_CONV_KERNEL: 1
+    STAGE1:
+      BLOCK: BOTTLENECK
+      FUSE_METHOD: SUM
+      NUM_BLOCKS: [4]
+      NUM_CHANNELS: [64]
+      NUM_MODULES: 1
+      NUM_RANCHES: 1
+    STAGE2:
+      BLOCK: BASIC
+      FUSE_METHOD: SUM
+      NUM_BLOCKS: [4, 4]
+      NUM_BRANCHES: 2
+      NUM_CHANNELS: [48, 96]
+      NUM_MODULES: 1
+    STAGE3:
+      BLOCK: BASIC
+      FUSE_METHOD: SUM
+      NUM_BLOCKS: [4, 4, 4]
+      NUM_BRANCHES: 3
+      NUM_CHANNELS: [48, 96, 192]
+      NUM_MODULES: 4
+    STAGE4:
+      BLOCK: BASIC
+      FUSE_METHOD: SUM
+      NUM_BLOCKS: [4, 4, 4, 4]
+      NUM_BRANCHES: 4
+      NUM_CHANNELS: [48, 96, 192, 384]
+      NUM_MODULES: 3
+  NAME: seg_hrnet_ocr
+  NUM_OUTPUTS: 2
+  OCR:
+    DROPOUT: 0.05
+    KEY_CHANNELS: 256
+    MID_CHANNELS: 512
+    SCALE: 1
+  PRETRAINED: /project_data/ramanan/zhiqiu/mapillary_weights/hrnetv2_w48_imagenet_pretrained.pth
+OUTPUT_DIR: v2_0_2090_all
+PIN_MEMORY: True
+PRINT_FREQ: 10
+RANK: 0
+TEST:
+  BASE_SIZE: 2200
+  BATCH_SIZE_PER_GPU: 1
+  FLIP_TEST: False
+  IMAGE_SIZE: [550, 550]
+  MODEL_FILE: 
+  MULTI_SCALE: False
+  NUM_SAMPLES: 0
+  OUTPUT_INDEX: -1
+  SCALE_LIST: [1]
+TRAIN:
+  BASE_SIZE: 2200
+  BATCH_SIZE_PER_GPU: 2
+  BEGIN_EPOCH: 0
+  CLASS_INVERSE_WEIGHTING: False
+  DOWNSAMPLERATE: 1
+  END_EPOCH: 75
+  EXTRA_EPOCH: 0
+  EXTRA_LR: 0.001
+  FLIP: True
+  FREEZE_EPOCHS: -1
+  FREEZE_LAYERS: 
+  IGNORE_LABEL: 255
+  IMAGE_SIZE: [550, 550]
+  LR: 0.01
+  LR_FACTOR: 0.1
+  LR_STEP: [90, 110]
+  MOMENTUM: 0.9
+  MULTI_SCALE: True
+  NESTEROV: False
+  NONBACKBONE_KEYWORDS: []
+  NONBACKBONE_MULT: 10
+  NUM_SAMPLES: 0
+  OPTIMIZER: sgd
+  RANDOM_BRIGHTNESS: False
+  RANDOM_BRIGHTNESS_SHIFT_VALUE: 10
+  RESUME: True
+  SCALE_FACTOR: 16
+  SHUFFLE: True
+  WD: 0.0005
+WORKERS: 4
+2022-04-27 03:18:45,335 Namespace(cfg='experiments/vista_v2_0/v2_0_2090_all.yaml', seed=304, local_rank=-1, opts=[])
+2022-04-27 03:18:45,335 AUTO_RESUME: False
+CUDNN:
+  BENCHMARK: True
+  DETERMINISTIC: False
+  ENABLED: True
+DATASET:
+  DATASET: vista_v2_0
+  EXTRA_TRAIN_SET: 
+  NUM_CLASSES: 116
+  ROOT: /scratch/mapillary_vistas
+  TEST_SET: data/list/vista_v2_0/test.lst
+  TRAIN_SET: data/list/vista_v2_0/train.lst
+  VAL_SET: data/list/vista_v2_0/val.lst
+DEBUG:
+  DEBUG: False
+  SAVE_BATCH_IMAGES_GT: False
+  SAVE_BATCH_IMAGES_PRED: False
+  SAVE_HEATMAPS_GT: False
+  SAVE_HEATMAPS_PRED: False
+GPUS: (0, 1, 2, 3)
+LOG_DIR: log
+LOSS:
+  BALANCE_WEIGHTS: [0.4, 1]
+  CLASS_BALANCE: False
+  OHEMKEEP: 131072
+  OHEMTHRES: 0.9
+  USE_OHEM: False
+MODEL:
+  ALIGN_CORNERS: True
+  EXTRA:
+    FINAL_CONV_KERNEL: 1
+    STAGE1:
+      BLOCK: BOTTLENECK
+      FUSE_METHOD: SUM
+      NUM_BLOCKS: [4]
+      NUM_CHANNELS: [64]
+      NUM_MODULES: 1
+      NUM_RANCHES: 1
+    STAGE2:
+      BLOCK: BASIC
+      FUSE_METHOD: SUM
+      NUM_BLOCKS: [4, 4]
+      NUM_BRANCHES: 2
+      NUM_CHANNELS: [48, 96]
+      NUM_MODULES: 1
+    STAGE3:
+      BLOCK: BASIC
+      FUSE_METHOD: SUM
+      NUM_BLOCKS: [4, 4, 4]
+      NUM_BRANCHES: 3
+      NUM_CHANNELS: [48, 96, 192]
+      NUM_MODULES: 4
+    STAGE4:
+      BLOCK: BASIC
+      FUSE_METHOD: SUM
+      NUM_BLOCKS: [4, 4, 4, 4]
+      NUM_BRANCHES: 4
+      NUM_CHANNELS: [48, 96, 192, 384]
+      NUM_MODULES: 3
+  NAME: seg_hrnet_ocr
+  NUM_OUTPUTS: 2
+  OCR:
+    DROPOUT: 0.05
+    KEY_CHANNELS: 256
+    MID_CHANNELS: 512
+    SCALE: 1
+  PRETRAINED: /project_data/ramanan/zhiqiu/mapillary_weights/hrnetv2_w48_imagenet_pretrained.pth
+OUTPUT_DIR: v2_0_2090_all
+PIN_MEMORY: True
+PRINT_FREQ: 10
+RANK: 0
+TEST:
+  BASE_SIZE: 2200
+  BATCH_SIZE_PER_GPU: 1
+  FLIP_TEST: False
+  IMAGE_SIZE: [550, 550]
+  MODEL_FILE: 
+  MULTI_SCALE: False
+  NUM_SAMPLES: 0
+  OUTPUT_INDEX: -1
+  SCALE_LIST: [1]
+TRAIN:
+  BASE_SIZE: 2200
+  BATCH_SIZE_PER_GPU: 2
+  BEGIN_EPOCH: 0
+  CLASS_INVERSE_WEIGHTING: False
+  DOWNSAMPLERATE: 1
+  END_EPOCH: 75
+  EXTRA_EPOCH: 0
+  EXTRA_LR: 0.001
+  FLIP: True
+  FREEZE_EPOCHS: -1
+  FREEZE_LAYERS: 
+  IGNORE_LABEL: 255
+  IMAGE_SIZE: [550, 550]
+  LR: 0.01
+  LR_FACTOR: 0.1
+  LR_STEP: [90, 110]
+  MOMENTUM: 0.9
+  MULTI_SCALE: True
+  NESTEROV: False
+  NONBACKBONE_KEYWORDS: []
+  NONBACKBONE_MULT: 10
+  NUM_SAMPLES: 0
+  OPTIMIZER: sgd
+  RANDOM_BRIGHTNESS: False
+  RANDOM_BRIGHTNESS_SHIFT_VALUE: 10
+  RESUME: True
+  SCALE_FACTOR: 16
+  SHUFFLE: True
+  WD: 0.0005
+WORKERS: 4
+2022-04-27 03:18:45,343 Namespace(cfg='experiments/vista_v2_0/v2_0_2090_all.yaml', seed=304, local_rank=-1, opts=[])
+2022-04-27 03:18:45,344 AUTO_RESUME: False
+CUDNN:
+  BENCHMARK: True
+  DETERMINISTIC: False
+  ENABLED: True
+DATASET:
+  DATASET: vista_v2_0
+  EXTRA_TRAIN_SET: 
+  NUM_CLASSES: 116
+  ROOT: /scratch/mapillary_vistas
+  TEST_SET: data/list/vista_v2_0/test.lst
+  TRAIN_SET: data/list/vista_v2_0/train.lst
+  VAL_SET: data/list/vista_v2_0/val.lst
+DEBUG:
+  DEBUG: False
+  SAVE_BATCH_IMAGES_GT: False
+  SAVE_BATCH_IMAGES_PRED: False
+  SAVE_HEATMAPS_GT: False
+  SAVE_HEATMAPS_PRED: False
+GPUS: (0, 1, 2, 3)
+LOG_DIR: log
+LOSS:
+  BALANCE_WEIGHTS: [0.4, 1]
+  CLASS_BALANCE: False
+  OHEMKEEP: 131072
+  OHEMTHRES: 0.9
+  USE_OHEM: False
+MODEL:
+  ALIGN_CORNERS: True
+  EXTRA:
+    FINAL_CONV_KERNEL: 1
+    STAGE1:
+      BLOCK: BOTTLENECK
+      FUSE_METHOD: SUM
+      NUM_BLOCKS: [4]
+      NUM_CHANNELS: [64]
+      NUM_MODULES: 1
+      NUM_RANCHES: 1
+    STAGE2:
+      BLOCK: BASIC
+      FUSE_METHOD: SUM
+      NUM_BLOCKS: [4, 4]
+      NUM_BRANCHES: 2
+      NUM_CHANNELS: [48, 96]
+      NUM_MODULES: 1
+    STAGE3:
+      BLOCK: BASIC
+      FUSE_METHOD: SUM
+      NUM_BLOCKS: [4, 4, 4]
+      NUM_BRANCHES: 3
+      NUM_CHANNELS: [48, 96, 192]
+      NUM_MODULES: 4
+    STAGE4:
+      BLOCK: BASIC
+      FUSE_METHOD: SUM
+      NUM_BLOCKS: [4, 4, 4, 4]
+      NUM_BRANCHES: 4
+      NUM_CHANNELS: [48, 96, 192, 384]
+      NUM_MODULES: 3
+  NAME: seg_hrnet_ocr
+  NUM_OUTPUTS: 2
+  OCR:
+    DROPOUT: 0.05
+    KEY_CHANNELS: 256
+    MID_CHANNELS: 512
+    SCALE: 1
+  PRETRAINED: /project_data/ramanan/zhiqiu/mapillary_weights/hrnetv2_w48_imagenet_pretrained.pth
+OUTPUT_DIR: v2_0_2090_all
+PIN_MEMORY: True
+PRINT_FREQ: 10
+RANK: 0
+TEST:
+  BASE_SIZE: 2200
+  BATCH_SIZE_PER_GPU: 1
+  FLIP_TEST: False
+  IMAGE_SIZE: [550, 550]
+  MODEL_FILE: 
+  MULTI_SCALE: False
+  NUM_SAMPLES: 0
+  OUTPUT_INDEX: -1
+  SCALE_LIST: [1]
+TRAIN:
+  BASE_SIZE: 2200
+  BATCH_SIZE_PER_GPU: 2
+  BEGIN_EPOCH: 0
+  CLASS_INVERSE_WEIGHTING: False
+  DOWNSAMPLERATE: 1
+  END_EPOCH: 75
+  EXTRA_EPOCH: 0
+  EXTRA_LR: 0.001
+  FLIP: True
+  FREEZE_EPOCHS: -1
+  FREEZE_LAYERS: 
+  IGNORE_LABEL: 255
+  IMAGE_SIZE: [550, 550]
+  LR: 0.01
+  LR_FACTOR: 0.1
+  LR_STEP: [90, 110]
+  MOMENTUM: 0.9
+  MULTI_SCALE: True
+  NESTEROV: False
+  NONBACKBONE_KEYWORDS: []
+  NONBACKBONE_MULT: 10
+  NUM_SAMPLES: 0
+  OPTIMIZER: sgd
+  RANDOM_BRIGHTNESS: False
+  RANDOM_BRIGHTNESS_SHIFT_VALUE: 10
+  RESUME: True
+  SCALE_FACTOR: 16
+  SHUFFLE: True
+  WD: 0.0005
+WORKERS: 4
+2022-04-27 03:18:45,358 Namespace(cfg='experiments/vista_v2_0/v2_0_2090_all.yaml', seed=304, local_rank=-1, opts=[])
+2022-04-27 03:18:45,358 AUTO_RESUME: False
+CUDNN:
+  BENCHMARK: True
+  DETERMINISTIC: False
+  ENABLED: True
+DATASET:
+  DATASET: vista_v2_0
+  EXTRA_TRAIN_SET: 
+  NUM_CLASSES: 116
+  ROOT: /scratch/mapillary_vistas
+  TEST_SET: data/list/vista_v2_0/test.lst
+  TRAIN_SET: data/list/vista_v2_0/train.lst
+  VAL_SET: data/list/vista_v2_0/val.lst
+DEBUG:
+  DEBUG: False
+  SAVE_BATCH_IMAGES_GT: False
+  SAVE_BATCH_IMAGES_PRED: False
+  SAVE_HEATMAPS_GT: False
+  SAVE_HEATMAPS_PRED: False
+GPUS: (0, 1, 2, 3)
+LOG_DIR: log
+LOSS:
+  BALANCE_WEIGHTS: [0.4, 1]
+  CLASS_BALANCE: False
+  OHEMKEEP: 131072
+  OHEMTHRES: 0.9
+  USE_OHEM: False
+MODEL:
+  ALIGN_CORNERS: True
+  EXTRA:
+    FINAL_CONV_KERNEL: 1
+    STAGE1:
+      BLOCK: BOTTLENECK
+      FUSE_METHOD: SUM
+      NUM_BLOCKS: [4]
+      NUM_CHANNELS: [64]
+      NUM_MODULES: 1
+      NUM_RANCHES: 1
+    STAGE2:
+      BLOCK: BASIC
+      FUSE_METHOD: SUM
+      NUM_BLOCKS: [4, 4]
+      NUM_BRANCHES: 2
+      NUM_CHANNELS: [48, 96]
+      NUM_MODULES: 1
+    STAGE3:
+      BLOCK: BASIC
+      FUSE_METHOD: SUM
+      NUM_BLOCKS: [4, 4, 4]
+      NUM_BRANCHES: 3
+      NUM_CHANNELS: [48, 96, 192]
+      NUM_MODULES: 4
+    STAGE4:
+      BLOCK: BASIC
+      FUSE_METHOD: SUM
+      NUM_BLOCKS: [4, 4, 4, 4]
+      NUM_BRANCHES: 4
+      NUM_CHANNELS: [48, 96, 192, 384]
+      NUM_MODULES: 3
+  NAME: seg_hrnet_ocr
+  NUM_OUTPUTS: 2
+  OCR:
+    DROPOUT: 0.05
+    KEY_CHANNELS: 256
+    MID_CHANNELS: 512
+    SCALE: 1
+  PRETRAINED: /project_data/ramanan/zhiqiu/mapillary_weights/hrnetv2_w48_imagenet_pretrained.pth
+OUTPUT_DIR: v2_0_2090_all
+PIN_MEMORY: True
+PRINT_FREQ: 10
+RANK: 0
+TEST:
+  BASE_SIZE: 2200
+  BATCH_SIZE_PER_GPU: 1
+  FLIP_TEST: False
+  IMAGE_SIZE: [550, 550]
+  MODEL_FILE: 
+  MULTI_SCALE: False
+  NUM_SAMPLES: 0
+  OUTPUT_INDEX: -1
+  SCALE_LIST: [1]
+TRAIN:
+  BASE_SIZE: 2200
+  BATCH_SIZE_PER_GPU: 2
+  BEGIN_EPOCH: 0
+  CLASS_INVERSE_WEIGHTING: False
+  DOWNSAMPLERATE: 1
+  END_EPOCH: 75
+  EXTRA_EPOCH: 0
+  EXTRA_LR: 0.001
+  FLIP: True
+  FREEZE_EPOCHS: -1
+  FREEZE_LAYERS: 
+  IGNORE_LABEL: 255
+  IMAGE_SIZE: [550, 550]
+  LR: 0.01
+  LR_FACTOR: 0.1
+  LR_STEP: [90, 110]
+  MOMENTUM: 0.9
+  MULTI_SCALE: True
+  NESTEROV: False
+  NONBACKBONE_KEYWORDS: []
+  NONBACKBONE_MULT: 10
+  NUM_SAMPLES: 0
+  OPTIMIZER: sgd
+  RANDOM_BRIGHTNESS: False
+  RANDOM_BRIGHTNESS_SHIFT_VALUE: 10
+  RESUME: True
+  SCALE_FACTOR: 16
+  SHUFFLE: True
+  WD: 0.0005
+WORKERS: 4
+2022-04-27 03:18:45,679 Added key: store_based_barrier_key:1 to store for rank: 3
+2022-04-27 03:18:45,691 Added key: store_based_barrier_key:1 to store for rank: 1
+2022-04-27 03:18:45,695 Added key: store_based_barrier_key:1 to store for rank: 2
+2022-04-27 03:18:45,697 Added key: store_based_barrier_key:1 to store for rank: 0
+2022-04-27 03:18:45,697 Rank 0: Completed store-based barrier for key:store_based_barrier_key:1 with 4 nodes.
+2022-04-27 03:18:45,700 Rank 3: Completed store-based barrier for key:store_based_barrier_key:1 with 4 nodes.
+2022-04-27 03:18:45,702 Rank 1: Completed store-based barrier for key:store_based_barrier_key:1 with 4 nodes.
+2022-04-27 03:18:45,706 Rank 2: Completed store-based barrier for key:store_based_barrier_key:1 with 4 nodes.
+2022-04-27 03:18:46,329 => init weights from normal distribution
+2022-04-27 03:18:46,373 => init weights from normal distribution
+2022-04-27 03:18:46,374 => init weights from normal distribution
+2022-04-27 03:18:46,381 => init weights from normal distribution
+2022-04-27 03:18:47,002 => loading pretrained model /project_data/ramanan/zhiqiu/mapillary_weights/hrnetv2_w48_imagenet_pretrained.pth
+2022-04-27 03:18:47,054 => loading pretrained model /project_data/ramanan/zhiqiu/mapillary_weights/hrnetv2_w48_imagenet_pretrained.pth
+2022-04-27 03:18:47,104 => loading pretrained model /project_data/ramanan/zhiqiu/mapillary_weights/hrnetv2_w48_imagenet_pretrained.pth
+2022-04-27 03:18:47,110 => loading pretrained model /project_data/ramanan/zhiqiu/mapillary_weights/hrnetv2_w48_imagenet_pretrained.pth

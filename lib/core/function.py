@@ -116,8 +116,8 @@ def validate(config, testloader, model, writer_dict):
                     config.TRAIN.IGNORE_LABEL
                 )
 
-            if idx % 10 == 0:
-                print(idx)
+            # if idx % 10 == 0:
+            #     print(idx)
 
             loss = losses.mean()
             if dist.is_distributed():
@@ -147,41 +147,47 @@ def validate(config, testloader, model, writer_dict):
     writer_dict['valid_global_steps'] = global_steps + 1
     return ave_loss.average(), mean_IoU, IoU_array
 
-def validate_vista(config, test_dataset, testloader, model, writer_dict=None, phase='valid'):
+def validate_vista(config, loader, model, writer_dict=None, phase='valid'):
     model.eval()
+    ave_loss = AverageMeter()
+    nums = config.MODEL.NUM_OUTPUTS
     confusion_matrix = np.zeros(
         (config.DATASET.NUM_CLASSES, config.DATASET.NUM_CLASSES))
     with torch.no_grad():
-        for idx, batch in enumerate(tqdm(testloader)):
+        for idx, batch in enumerate(loader):
             image, label, _, _ = batch
             size = label.size()
             image = image.cuda()
             label = label.long().cuda()
-            pred = test_dataset.multi_scale_inference(
-                config,
-                model,
-                image,
-                scales=config.TEST.SCALE_LIST,
-                flip=config.TEST.FLIP_TEST
+            losses, pred = model(image, label)
+            if not isinstance(pred, (list, tuple)):
+                pred = [pred]
+                
+            x = pred[config.TEST.OUTPUT_INDEX]
+            x = F.interpolate(
+                input=x, size=size[-2:],
+                mode='bilinear', align_corners=config.MODEL.ALIGN_CORNERS
             )
-
-            if pred.size()[-2] != size[-2] or pred.size()[-1] != size[-1]:
-                pred = F.interpolate(
-                    pred, size[-2:],
-                    mode='bilinear', align_corners=config.MODEL.ALIGN_CORNERS
-                )
 
             confusion_matrix += get_confusion_matrix(
                 label,
-                pred,
+                x,
                 size,
                 config.DATASET.NUM_CLASSES,
-                config.TRAIN.IGNORE_LABEL)
+                config.TRAIN.IGNORE_LABEL
+            )
 
-    # if dist.is_distributed():
-    #     confusion_matrix = torch.from_numpy(confusion_matrix).cuda()
-    #     reduced_confusion_matrix = reduce_tensor(confusion_matrix)
-    #     confusion_matrix = reduced_confusion_matrix.cpu().numpy()
+            loss = losses.mean()
+            if dist.is_distributed():
+                reduced_loss = reduce_tensor(loss)
+            else:
+                reduced_loss = loss
+            ave_loss.update(reduced_loss.item())
+
+    if dist.is_distributed():
+        confusion_matrix = torch.from_numpy(confusion_matrix).cuda()
+        reduced_confusion_matrix = reduce_tensor(confusion_matrix)
+        confusion_matrix = reduced_confusion_matrix.cpu().numpy()
 
     pos = confusion_matrix.sum(1)
     res = confusion_matrix.sum(0)
@@ -190,14 +196,67 @@ def validate_vista(config, test_dataset, testloader, model, writer_dict=None, ph
     mean_acc = (tp/np.maximum(1.0, pos)).mean()
     IoU_array = (tp / np.maximum(1.0, pos + res - tp))
     mean_IoU = IoU_array.mean()
+    if dist.get_rank() <= 0:
+        logging.info('IoU_array={} mean_IoU={} pixel_acc={} mean_acc={}'.format(IoU_array, mean_IoU, pixel_acc, mean_acc))
+    
+    writer = writer_dict['writer']
+    global_steps = writer_dict['valid_global_steps']
+    writer.add_scalar(f'{phase}_loss', ave_loss.average(), global_steps)
+    writer.add_scalar(f'{phase}_mIoU', mean_IoU, global_steps)
+    writer_dict[f'{phase}_global_steps'] = global_steps + 1
+    return ave_loss.average(), mean_IoU, IoU_array, pixel_acc, mean_acc
 
-    if writer_dict:
-        writer = writer_dict['writer']
-        global_steps = writer_dict['valid_global_steps']
-        writer.add_scalar(f'{phase}_mIoU', mean_IoU, global_steps)
-        if phase == 'valid':
-            writer_dict['valid_global_steps'] = global_steps + 1
-    return mean_IoU, IoU_array, pixel_acc, mean_acc
+# def validate_vista(config, test_dataset, testloader, model, writer_dict=None, phase='valid'):
+#     model.eval()
+#     confusion_matrix = np.zeros(
+#         (config.DATASET.NUM_CLASSES, config.DATASET.NUM_CLASSES))
+#     with torch.no_grad():
+#         for idx, batch in enumerate(tqdm(testloader)):
+#             image, label, _, _ = batch
+#             size = label.size()
+#             image = image.cuda()
+#             label = label.long().cuda()
+#             pred = test_dataset.multi_scale_inference(
+#                 config,
+#                 model,
+#                 image,
+#                 scales=config.TEST.SCALE_LIST,
+#                 flip=config.TEST.FLIP_TEST
+#             )
+
+#             if pred.size()[-2] != size[-2] or pred.size()[-1] != size[-1]:
+#                 pred = F.interpolate(
+#                     pred, size[-2:],
+#                     mode='bilinear', align_corners=config.MODEL.ALIGN_CORNERS
+#                 )
+
+#             confusion_matrix += get_confusion_matrix(
+#                 label,
+#                 pred,
+#                 size,
+#                 config.DATASET.NUM_CLASSES,
+#                 config.TRAIN.IGNORE_LABEL)
+
+#     # if dist.is_distributed():
+#     #     confusion_matrix = torch.from_numpy(confusion_matrix).cuda()
+#     #     reduced_confusion_matrix = reduce_tensor(confusion_matrix)
+#     #     confusion_matrix = reduced_confusion_matrix.cpu().numpy()
+
+#     pos = confusion_matrix.sum(1)
+#     res = confusion_matrix.sum(0)
+#     tp = np.diag(confusion_matrix)
+#     pixel_acc = tp.sum()/pos.sum()
+#     mean_acc = (tp/np.maximum(1.0, pos)).mean()
+#     IoU_array = (tp / np.maximum(1.0, pos + res - tp))
+#     mean_IoU = IoU_array.mean()
+
+#     if writer_dict:
+#         writer = writer_dict['writer']
+#         global_steps = writer_dict['valid_global_steps']
+#         writer.add_scalar(f'{phase}_mIoU', mean_IoU, global_steps)
+#         if phase == 'valid':
+#             writer_dict['valid_global_steps'] = global_steps + 1
+#     return mean_IoU, IoU_array, pixel_acc, mean_acc
 
 def testval(config, test_dataset, testloader, model,
             sv_dir='', sv_pred=False):

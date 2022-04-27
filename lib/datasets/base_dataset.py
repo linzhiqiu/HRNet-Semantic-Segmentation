@@ -159,7 +159,7 @@ class BaseDataset(data.Dataset):
             image, label = self.multi_scale_aug(image, label,
                                                 rand_scale=rand_scale)
 
-        image = self.random_brightness(image)
+        # image = self.random_brightness(image)
         image = self.input_transform(image)
         label = self.label_transform(label)
         image = image.transpose((2, 0, 1))

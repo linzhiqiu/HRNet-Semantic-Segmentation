@@ -19,7 +19,8 @@ from .base_dataset import BaseDataset
 class Vista(BaseDataset):
     def __init__(self,
                  root,
-                 list_path, 
+                 is_train=False,
+                 list_path=[], 
                  multi_scale=True, 
                  flip=True, 
                  ignore_label=-1, 
@@ -35,6 +36,7 @@ class Vista(BaseDataset):
                 crop_size, downsample_rate, scale_factor, mean, std,)
         self.root = root # root dir for downloaded data
         self.list_path = list_path
+        self.is_train = is_train
 
         self.multi_scale = multi_scale
         self.flip = flip
@@ -209,7 +211,8 @@ class Vista(BaseDataset):
 class Vista_V1_2(Vista):
     def __init__(self,
                  root,
-                 list_path, 
+                 list_path=[],
+                 is_train=False, 
                  multi_scale=True, 
                  flip=True,
                  ignore_label=-1, 
@@ -222,7 +225,8 @@ class Vista_V1_2(Vista):
                  std=[0.229, 0.224, 0.225]):
         self.version = 'v1.2'
         super(Vista_V1_2, self).__init__(root,
-                                         list_path,
+                                         list_path=list_path,
+                                         is_train=is_train,
                                          multi_scale=multi_scale, 
                                          flip=flip, 
                                          ignore_label=ignore_label, 
@@ -237,7 +241,7 @@ class Vista_V1_2(Vista):
 class Vista_V2_0(Vista):
     def __init__(self,
                  root,
-                 list_path, 
+                 list_path=[], 
                  multi_scale=True, 
                  flip=True, 
                  ignore_label=-1, 
@@ -250,7 +254,8 @@ class Vista_V2_0(Vista):
                  std=[0.229, 0.224, 0.225]):
         self.version = 'v2.0'
         super(Vista_V2_0, self).__init__(root,
-                                         list_path,
+                                         list_path=[],
+                                         is_train=is_train,
                                          multi_scale=multi_scale, 
                                          flip=flip, 
                                          ignore_label=ignore_label, 

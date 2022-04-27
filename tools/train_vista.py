@@ -3,7 +3,7 @@
 # Licensed under the MIT License.
 # Written by Ke Sun (sunk@mail.ustc.edu.cn)
 # ------------------------------------------------------------------------------
-# python -m torch.distributed.launch --nproc_per_node=4 tools/train_vista.py --cfg experiments/vista_v1_2/v1_2_all_seg_hrnet_ocr_w48_train_1024x1024_sgd_lr1e-2_wd5e-4_bs_12_epoch200.yaml
+# torchrun --standalone --nnodes=1 --nproc_per_node=4 tools/train_vista.py --cfg experiments/vista_v1_2/v1_2_2090.yaml
 import argparse
 import os
 import pprint
@@ -126,6 +126,7 @@ def main():
     crop_size = (config.TRAIN.IMAGE_SIZE[1], config.TRAIN.IMAGE_SIZE[0])
     train_dataset = eval('datasets.'+config.DATASET.DATASET)(
                         root=config.DATASET.ROOT,
+                        is_train=True,
                         list_path=config.DATASET.TRAIN_SET,
                         multi_scale=config.TRAIN.MULTI_SCALE,
                         flip=config.TRAIN.FLIP,
@@ -147,15 +148,18 @@ def main():
         sampler=train_sampler)
 
     test_size = (config.TEST.IMAGE_SIZE[1], config.TEST.IMAGE_SIZE[0])
+    print(test_size)
     val_dataset = eval('datasets.'+config.DATASET.DATASET)(
                         root=config.DATASET.ROOT,
+                        is_train=False,
                         list_path=config.DATASET.VAL_SET,
-                        multi_scale=config.TEST.FLIP_TEST,
-                        flip=config.TEST.MULTI_SCALE,
+                        multi_scale=False,
+                        flip=False,
                         ignore_label=config.TRAIN.IGNORE_LABEL,
                         base_size=config.TEST.BASE_SIZE,
                         crop_size=test_size,
                         downsample_rate=1)
+    assert len(val_dataset) & len(gpus) == 0
     val_sampler = get_sampler(val_dataset)
     valloader = torch.utils.data.DataLoader(
         val_dataset,
@@ -164,9 +168,9 @@ def main():
         num_workers=config.WORKERS,
         pin_memory=True,
         sampler=val_sampler)
-    # import pdb; pdb.set_trace()
     test_dataset = eval('datasets.'+config.DATASET.DATASET)(
                         root=config.DATASET.ROOT,
+                        is_train=False,
                         list_path=config.DATASET.TEST_SET,
                         multi_scale=False,
                         flip=False,
@@ -176,6 +180,7 @@ def main():
                         downsample_rate=1)
     
     test_sampler = get_sampler(test_dataset)
+    assert len(test_dataset) & len(gpus) == 0
     testloader = torch.utils.data.DataLoader(
         test_dataset,
         batch_size=test_batch_size,
@@ -199,7 +204,7 @@ def main():
         model = model.to(device)
         model = torch.nn.parallel.DistributedDataParallel(
             model,
-            find_unused_parameters=True,
+            # find_unused_parameters=True,
             device_ids=[local_rank],
             output_device=local_rank
         )
@@ -235,10 +240,19 @@ def main():
     else:
         raise ValueError('Only Support SGD optimizer')
 
-    epoch_iters = np.int(train_dataset.__len__() / 
-                        config.TRAIN.BATCH_SIZE_PER_GPU / len(gpus))
+    epoch_iters = int(train_dataset.__len__() / config.TRAIN.BATCH_SIZE_PER_GPU / len(gpus))
+    
     best_mIoU = 0
-    # test_best_mIoU = 0
+    val_best_mIoU = 0
+    best_epoch = 0
+    val_mIoUs = []
+    test_mIoUs = []
+    val_IoU_arrays = []
+    test_IoU_arrays = []
+    val_pixel_accs = []
+    test_pixel_accs = []
+    val_mean_accs = []
+    test_mean_accs = []
     last_epoch = 0
     if config.TRAIN.RESUME:
         model_state_file = os.path.join(final_output_dir,
@@ -246,6 +260,16 @@ def main():
         if os.path.isfile(model_state_file):
             checkpoint = torch.load(model_state_file, map_location={'cuda:0': 'cpu'})
             best_mIoU = checkpoint['best_mIoU']
+            val_best_mIoU = checkpoint['val_best_mIoU']
+            best_epoch = checkpoint['best_epoch']
+            val_mIoUs = checkpoint['val_mIoUs']
+            test_mIoUs = checkpoint['test_mIoUs']
+            val_IoU_arrays = checkpoint['val_IoU_arrays']
+            test_IoU_arrays = checkpoint['test_IoU_arrays']
+            val_pixel_accs = checkpoint['val_pixel_accs']
+            test_pixel_accs = checkpoint['test_IoU_arrays']
+            val_mean_accs = checkpoint['val_mean_accs']
+            test_mean_accs = checkpoint['test_mean_accs']
             last_epoch = checkpoint['epoch']
             dct = checkpoint['state_dict']
             
@@ -260,57 +284,71 @@ def main():
     end_epoch = config.TRAIN.END_EPOCH
     num_iters = config.TRAIN.END_EPOCH * epoch_iters
     for epoch in range(last_epoch, end_epoch):
-        # continue 
         current_trainloader = trainloader
         if current_trainloader.sampler is not None and hasattr(current_trainloader.sampler, 'set_epoch'):
             current_trainloader.sampler.set_epoch(epoch)
 
-        # TODO
         epoch_time = timeit.default_timer()
-        train(config, epoch, config.TRAIN.END_EPOCH, 
-                epoch_iters, config.TRAIN.LR, num_iters,
-                trainloader, optimizer, model, writer_dict)
-        print('Minutes for training: %d' % np.int((-epoch_time+timeit.default_timer())/60))
-
+        # train(config, epoch, config.TRAIN.END_EPOCH, 
+        #         epoch_iters, config.TRAIN.LR, num_iters,
+        #         trainloader, optimizer, model, writer_dict)
+        if local_rank <= 0:
+            print('Minutes for Training: %d' % np.int((-epoch_time+timeit.default_timer())/60))
+        
+        epoch_time = timeit.default_timer()
+        valid_loss, val_mean_IoU, val_IoU_array, val_pixel_acc, val_mean_acc = validate_vista(config, 
+                    valloader, model, writer_dict, phase='valid')
         
         if local_rank <= 0:
-            epoch_time = timeit.default_timer()
-            mean_IoU, IoU_array, pixel_acc, mean_acc = validate_vista(config, val_dataset, valloader, model, writer_dict, phase='valid')
             print('Minutes for Validation: %d' % np.int((-epoch_time+timeit.default_timer())/60))
-            # # test_mean_IoU, test_IoU_array, test_pixel_acc, test_mean_acc = mean_IoU, IoU_array, pixel_acc, mean_acc
-            # epoch_time = timeit.default_timer()
-            # test_mean_IoU, test_IoU_array, test_pixel_acc, test_mean_acc = validate_vista(config, test_dataset, testloader, model, writer_dict, phase='test')
-            # print('Minutes for Testing: %d' % np.int((-epoch_time+timeit.default_timer())/60))
+        
+        test_loss, test_mean_IoU, test_IoU_array, test_pixel_acc, test_mean_acc = validate_vista(config, 
+                    testloader, model, writer_dict, phase='test')
 
+        if local_rank <= 0:
             logger.info('=> saving checkpoint to {}'.format(
                 final_output_dir + 'checkpoint.pth.tar'))
-            if mean_IoU > best_mIoU:
-                best_mIoU = mean_IoU
+            if val_mean_IoU > val_best_mIoU:
+                val_best_mIoU = val_mean_IoU
+                best_epoch = epoch
                 torch.save(model.module.state_dict(),
                         os.path.join(final_output_dir, 'best_val.pth'))
                 print("Saved to " + os.path.join(final_output_dir, 'best_val.pth'))
-            # if test_mean_IoU > test_best_mIoU:
-            #     test_best_mIoU = test_mean_IoU
-            #     torch.save(model.module.state_dict(),
-            #             os.path.join(final_output_dir, 'best_test.pth'))
-            #     print("Saved to " + os.path.join(final_output_dir, 'best_test.pth'))
 
+            val_mIoUs.append(val_mean_IoU)
+            test_mIoUs.append(test_mean_IoU)
+            val_IoU_arrays.append(val_IoU_array)
+            test_IoU_arrays.append(test_IoU_array)
+            val_pixel_accs.append(val_pixel_acc)
+            test_pixel_accs.append(test_pixel_acc)
+            val_mean_accs.append(val_mean_acc)
+            test_mean_accs.append(test_mean_acc)
+            
             checkpoint_path = os.path.join(final_output_dir,'checkpoint.pth.tar')
             torch.save({
                 'epoch': epoch+1,
                 'best_mIoU': best_mIoU,
-                # 'test_best_mIoU': test_best_mIoU,
                 'state_dict': model.module.state_dict(),
                 'optimizer': optimizer.state_dict(),
-            }, checkpoint_path)
+                'val_best_mIoU': val_best_mIoU,
+                'best_epoch': best_epoch,
+                'val_mIoUs': val_mIoUs,
+                'test_mIoUs': test_mIoUs,
+                'val_IoU_arrays': val_IoU_arrays,
+                'test_IoU_arrays': test_IoU_arrays,
+                'val_pixel_accs': val_pixel_accs,
+                'test_pixel_accs': test_pixel_accs,
+                'val_mean_accs': val_mean_accs,
+                'test_mean_accs': test_mean_accs,
+                }, checkpoint_path)
             print(f"Saving to {checkpoint_path}")
-            msg = 'MeanIU: {: 4.4f}, Best_mIoU (On Val set): {: 4.4f}, Best_mIoU (On Test set): N/A'.format(
-                        mean_IoU, best_mIoU)
+            msg = 'Best Val mIoU: {: 4.4f}, Best Test mIoU: {: 4.4f}. Best Test mIoU (best val epoch {}): {: 4.4f}'.format(
+                        val_best_IoU, max(test_mIoUs), best_epoch, test_mIoUs[best_epoch])
             logging.info(msg)
             logging.info(IoU_array)
 
-        # if distributed:
-        #     torch.distributed.barrier()
+        if distributed:
+            torch.distributed.barrier()
     
     if local_rank <= 0:
 
@@ -322,16 +360,16 @@ def main():
         logger.info('Hours: %d' % np.int((end-start)/3600))
         logger.info('Done')
     
-        model_state_file = os.path.join(final_output_dir, 'best_val.pth')
-        # model_state_file = os.path.join(final_output_dir, 'final_state.pth')
-        assert os.path.isfile(model_state_file)
-        checkpoint = torch.load(model_state_file, map_location={'cuda:0': 'cpu'})
-        print("Loaded!")
-        model.module.model.load_state_dict({k.replace('model.', ''): v for k, v in checkpoint.items() if k.startswith('model.')})
-        mean_IoU, IoU_array, pixel_acc, mean_acc = validate_vista(config, val_dataset, valloader, model, writer_dict=None, phase='valid')
-        print(f"This best val model achieves {mean_IoU} val IoU (Best val IoU is {best_mIoU}) and pixel_acc {pixel_acc} and mean_acc {mean_acc}")
-        test_mean_IoU, test_IoU_array, test_pixel_acc, test_mean_acc = validate_vista(config, test_dataset, testloader, model, writer_dict=None, phase='test')
-        print(f"This best val model achieves {test_mean_IoU} test IoU (Best test IoU is ?) and test_pixel_acc {test_pixel_acc} and test_mean_acc {test_mean_acc}")
+        # model_state_file = os.path.join(final_output_dir, 'best_val.pth')
+        # # model_state_file = os.path.join(final_output_dir, 'final_state.pth')
+        # assert os.path.isfile(model_state_file)
+        # checkpoint = torch.load(model_state_file, map_location={'cuda:0': 'cpu'})
+        # print("Loaded!")
+        # model.module.model.load_state_dict({k.replace('model.', ''): v for k, v in checkpoint.items() if k.startswith('model.')})
+        # mean_IoU, IoU_array, pixel_acc, mean_acc = validate_vista(config, val_dataset, valloader, model, writer_dict=None, phase='valid')
+        # print(f"This best val model achieves {mean_IoU} val IoU (Best val IoU is {best_mIoU}) and pixel_acc {pixel_acc} and mean_acc {mean_acc}")
+        # test_mean_IoU, test_IoU_array, test_pixel_acc, test_mean_acc = validate_vista(config, test_dataset, testloader, model, writer_dict=None, phase='test')
+        # print(f"This best val model achieves {test_mean_IoU} test IoU (Best test IoU is ?) and test_pixel_acc {test_pixel_acc} and test_mean_acc {test_mean_acc}")
 
     
 
