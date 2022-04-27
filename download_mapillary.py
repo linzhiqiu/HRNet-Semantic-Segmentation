@@ -2,6 +2,23 @@ from tqdm import tqdm
 import zipfile
 import gdown
 import os
+import argparse
+
+MAPILLARY_GDRIVE_ID = "1MR7M-as-stOIog2EyhNXwnKKC9-aXXiM"
+MAPILLARY_MD5 = "a821a7620adfa4a73ca2ec00c16fd054"
+
+def parse_args():
+    parser = argparse.ArgumentParser(description='Download mapillary vistas v1.2 and v2.0')
+    
+    parser.add_argument('--save_dir',
+                        help='save to this directory',
+                        required=True,
+                        type=str)
+    parser.add_argument('--gdrive_id', type=str, default=MAPILLARY_GDRIVE_ID)
+    parser.add_argument("--md5", type=str, default=MAPILLARY_MD5) 
+    parser.add_argument("--remove_finished", type=bool, default=True)       
+    args = parser.parse_args()
+    return args
 
 # helper function to download and extract zip file from Google drive
 def _extract_zip(from_path, to_path, compression):
@@ -33,3 +50,33 @@ def extract_archive(from_path, to_path=None, remove_finished=False):
         os.remove(from_path)
 
     return to_path
+
+
+def download_from_google_drive(save_dir,
+                               name="mapillary_vistas",
+                               gdrive_id=MAPILLARY_GDRIVE_ID,
+                               md5=MAPILLARY_MD5,
+                               remove_finished=True):
+    dataset_dir = os.path.join(save_dir, name)
+    if not os.path.exists(dataset_dir):
+        zip_path = os.path.join(save_dir, f'{name}.zip')
+        gdrive_url = f"https://drive.google.com/u/0/uc?id={gdrive_id}"
+        gdown.download(gdrive_url, zip_path, quiet=False)
+        gdown.cached_download(gdrive_url, zip_path,
+                              md5=md5)
+        extract_archive(
+            zip_path, to_path=save_dir, remove_finished=remove_finished
+        )
+    else:
+        print(f"{dataset_dir} already exists.")
+        
+    
+if __name__ == "__main__":
+    args = parse_args()
+    download_from_google_drive(
+        args.save_dir,
+        gdrive_id=args.gdrive_id,
+        md5=args.md5,
+        remove_finished=args.remove_finished
+    )
+    
