@@ -126,7 +126,6 @@ def main():
     crop_size = (config.TRAIN.IMAGE_SIZE[1], config.TRAIN.IMAGE_SIZE[0])
     train_dataset = eval('datasets.'+config.DATASET.DATASET)(
                         root=config.DATASET.ROOT,
-                        is_train=True,
                         list_path=config.DATASET.TRAIN_SET,
                         multi_scale=config.TRAIN.MULTI_SCALE,
                         flip=config.TRAIN.FLIP,
@@ -147,47 +146,45 @@ def main():
         drop_last=True,
         sampler=train_sampler)
 
-    test_size = (config.TEST.IMAGE_SIZE[1], config.TEST.IMAGE_SIZE[0])
-    print(test_size)
-    val_dataset = eval('datasets.'+config.DATASET.DATASET)(
-                        root=config.DATASET.ROOT,
-                        is_train=False,
-                        list_path=config.DATASET.VAL_SET,
-                        multi_scale=False,
-                        flip=False,
-                        ignore_label=config.TRAIN.IGNORE_LABEL,
-                        base_size=config.TEST.BASE_SIZE,
-                        crop_size=test_size,
-                        downsample_rate=1)
-    assert len(val_dataset) & len(gpus) == 0
-    val_sampler = get_sampler(val_dataset)
-    valloader = torch.utils.data.DataLoader(
-        val_dataset,
-        batch_size=test_batch_size,
-        shuffle=False,
-        num_workers=config.WORKERS,
-        pin_memory=True,
-        sampler=val_sampler)
-    test_dataset = eval('datasets.'+config.DATASET.DATASET)(
-                        root=config.DATASET.ROOT,
-                        is_train=False,
-                        list_path=config.DATASET.TEST_SET,
-                        multi_scale=False,
-                        flip=False,
-                        ignore_label=config.TRAIN.IGNORE_LABEL,
-                        base_size=config.TEST.BASE_SIZE,
-                        crop_size=test_size,
-                        downsample_rate=1)
+    # test_size = (config.TEST.IMAGE_SIZE[1], config.TEST.IMAGE_SIZE[0])
+    # print(test_size)
+    # val_dataset = eval('datasets.'+config.DATASET.DATASET)(
+    #                     root=config.DATASET.ROOT,
+    #                     list_path=config.DATASET.VAL_SET,
+    #                     multi_scale=False,
+    #                     flip=False,
+    #                     ignore_label=config.TRAIN.IGNORE_LABEL,
+    #                     base_size=config.TEST.BASE_SIZE,
+    #                     crop_size=test_size,
+    #                     downsample_rate=1)
+    # assert len(val_dataset) & len(gpus) == 0
+    # val_sampler = get_sampler(val_dataset)
+    # valloader = torch.utils.data.DataLoader(
+    #     val_dataset,
+    #     batch_size=test_batch_size,
+    #     shuffle=False,
+    #     num_workers=config.WORKERS,
+    #     pin_memory=True,
+    #     sampler=val_sampler)
+    # test_dataset = eval('datasets.'+config.DATASET.DATASET)(
+    #                     root=config.DATASET.ROOT,
+    #                     list_path=config.DATASET.TEST_SET,
+    #                     multi_scale=False,
+    #                     flip=False,
+    #                     ignore_label=config.TRAIN.IGNORE_LABEL,
+    #                     base_size=config.TEST.BASE_SIZE,
+    #                     crop_size=test_size,
+    #                     downsample_rate=1)
     
-    test_sampler = get_sampler(test_dataset)
-    assert len(test_dataset) & len(gpus) == 0
-    testloader = torch.utils.data.DataLoader(
-        test_dataset,
-        batch_size=test_batch_size,
-        shuffle=False,
-        num_workers=config.WORKERS,
-        pin_memory=True,
-        sampler=test_sampler)
+    # test_sampler = get_sampler(test_dataset)
+    # assert len(test_dataset) & len(gpus) == 0
+    # testloader = torch.utils.data.DataLoader(
+    #     test_dataset,
+    #     batch_size=test_batch_size,
+    #     shuffle=False,
+    #     num_workers=config.WORKERS,
+    #     pin_memory=True,
+    #     sampler=test_sampler)
 
     # criterion
     if config.LOSS.USE_OHEM:
@@ -242,34 +239,34 @@ def main():
 
     epoch_iters = int(train_dataset.__len__() / config.TRAIN.BATCH_SIZE_PER_GPU / len(gpus))
     
-    best_mIoU = 0
-    val_best_mIoU = 0
-    best_epoch = 0
-    val_mIoUs = []
-    test_mIoUs = []
-    val_IoU_arrays = []
-    test_IoU_arrays = []
-    val_pixel_accs = []
-    test_pixel_accs = []
-    val_mean_accs = []
-    test_mean_accs = []
+    # best_mIoU = 0
+    # val_best_mIoU = 0
+    # best_epoch = 0
+    # val_mIoUs = []
+    # test_mIoUs = []
+    # val_IoU_arrays = []
+    # test_IoU_arrays = []
+    # val_pixel_accs = []
+    # test_pixel_accs = []
+    # val_mean_accs = []
+    # test_mean_accs = []
     last_epoch = 0
     if config.TRAIN.RESUME:
         model_state_file = os.path.join(final_output_dir,
                                         'checkpoint.pth.tar')
         if os.path.isfile(model_state_file):
             checkpoint = torch.load(model_state_file, map_location={'cuda:0': 'cpu'})
-            best_mIoU = checkpoint['best_mIoU']
-            val_best_mIoU = checkpoint['val_best_mIoU']
-            best_epoch = checkpoint['best_epoch']
-            val_mIoUs = checkpoint['val_mIoUs']
-            test_mIoUs = checkpoint['test_mIoUs']
-            val_IoU_arrays = checkpoint['val_IoU_arrays']
-            test_IoU_arrays = checkpoint['test_IoU_arrays']
-            val_pixel_accs = checkpoint['val_pixel_accs']
-            test_pixel_accs = checkpoint['test_IoU_arrays']
-            val_mean_accs = checkpoint['val_mean_accs']
-            test_mean_accs = checkpoint['test_mean_accs']
+            # best_mIoU = checkpoint['best_mIoU']
+            # val_best_mIoU = checkpoint['val_best_mIoU']
+            # best_epoch = checkpoint['best_epoch']
+            # val_mIoUs = checkpoint['val_mIoUs']
+            # test_mIoUs = checkpoint['test_mIoUs']
+            # val_IoU_arrays = checkpoint['val_IoU_arrays']
+            # test_IoU_arrays = checkpoint['test_IoU_arrays']
+            # val_pixel_accs = checkpoint['val_pixel_accs']
+            # test_pixel_accs = checkpoint['test_IoU_arrays']
+            # val_mean_accs = checkpoint['val_mean_accs']
+            # test_mean_accs = checkpoint['test_mean_accs']
             last_epoch = checkpoint['epoch']
             dct = checkpoint['state_dict']
             
@@ -289,63 +286,63 @@ def main():
             current_trainloader.sampler.set_epoch(epoch)
 
         epoch_time = timeit.default_timer()
-        # train(config, epoch, config.TRAIN.END_EPOCH, 
-        #         epoch_iters, config.TRAIN.LR, num_iters,
-        #         trainloader, optimizer, model, writer_dict)
+        train(config, epoch, config.TRAIN.END_EPOCH, 
+                epoch_iters, config.TRAIN.LR, num_iters,
+                trainloader, optimizer, model, writer_dict)
         if local_rank <= 0:
             print('Minutes for Training: %d' % np.int((-epoch_time+timeit.default_timer())/60))
         
-        epoch_time = timeit.default_timer()
-        valid_loss, val_mean_IoU, val_IoU_array, val_pixel_acc, val_mean_acc = validate_vista(config, 
-                    valloader, model, writer_dict, phase='valid')
+        # epoch_time = timeit.default_timer()
+        # valid_loss, val_mean_IoU, val_IoU_array, val_pixel_acc, val_mean_acc = validate_vista(config, 
+        #             valloader, model, writer_dict, phase='valid')
         
-        if local_rank <= 0:
-            print('Minutes for Validation: %d' % np.int((-epoch_time+timeit.default_timer())/60))
+        # if local_rank <= 0:
+        #     print('Minutes for Validation: %d' % np.int((-epoch_time+timeit.default_timer())/60))
         
-        test_loss, test_mean_IoU, test_IoU_array, test_pixel_acc, test_mean_acc = validate_vista(config, 
-                    testloader, model, writer_dict, phase='test')
+        # test_loss, test_mean_IoU, test_IoU_array, test_pixel_acc, test_mean_acc = validate_vista(config, 
+        #             testloader, model, writer_dict, phase='test')
 
         if local_rank <= 0:
             logger.info('=> saving checkpoint to {}'.format(
                 final_output_dir + 'checkpoint.pth.tar'))
-            if val_mean_IoU > val_best_mIoU:
-                val_best_mIoU = val_mean_IoU
-                best_epoch = epoch
-                torch.save(model.module.state_dict(),
-                        os.path.join(final_output_dir, 'best_val.pth'))
-                print("Saved to " + os.path.join(final_output_dir, 'best_val.pth'))
+            # if val_mean_IoU > val_best_mIoU:
+            #     val_best_mIoU = val_mean_IoU
+            #     best_epoch = epoch
+            #     torch.save(model.module.state_dict(),
+            #             os.path.join(final_output_dir, 'best_val.pth'))
+            #     print("Saved to " + os.path.join(final_output_dir, 'best_val.pth'))
 
-            val_mIoUs.append(val_mean_IoU)
-            test_mIoUs.append(test_mean_IoU)
-            val_IoU_arrays.append(val_IoU_array)
-            test_IoU_arrays.append(test_IoU_array)
-            val_pixel_accs.append(val_pixel_acc)
-            test_pixel_accs.append(test_pixel_acc)
-            val_mean_accs.append(val_mean_acc)
-            test_mean_accs.append(test_mean_acc)
+            # val_mIoUs.append(val_mean_IoU)
+            # test_mIoUs.append(test_mean_IoU)
+            # val_IoU_arrays.append(val_IoU_array)
+            # test_IoU_arrays.append(test_IoU_array)
+            # val_pixel_accs.append(val_pixel_acc)
+            # test_pixel_accs.append(test_pixel_acc)
+            # val_mean_accs.append(val_mean_acc)
+            # test_mean_accs.append(test_mean_acc)
             
             checkpoint_path = os.path.join(final_output_dir,'checkpoint.pth.tar')
             torch.save({
                 'epoch': epoch+1,
-                'best_mIoU': best_mIoU,
+                # 'best_mIoU': best_mIoU,
                 'state_dict': model.module.state_dict(),
                 'optimizer': optimizer.state_dict(),
-                'val_best_mIoU': val_best_mIoU,
-                'best_epoch': best_epoch,
-                'val_mIoUs': val_mIoUs,
-                'test_mIoUs': test_mIoUs,
-                'val_IoU_arrays': val_IoU_arrays,
-                'test_IoU_arrays': test_IoU_arrays,
-                'val_pixel_accs': val_pixel_accs,
-                'test_pixel_accs': test_pixel_accs,
-                'val_mean_accs': val_mean_accs,
-                'test_mean_accs': test_mean_accs,
+                # 'val_best_mIoU': val_best_mIoU,
+                # 'best_epoch': best_epoch,
+                # 'val_mIoUs': val_mIoUs,
+                # 'test_mIoUs': test_mIoUs,
+                # 'val_IoU_arrays': val_IoU_arrays,
+                # 'test_IoU_arrays': test_IoU_arrays,
+                # 'val_pixel_accs': val_pixel_accs,
+                # 'test_pixel_accs': test_pixel_accs,
+                # 'val_mean_accs': val_mean_accs,
+                # 'test_mean_accs': test_mean_accs,
                 }, checkpoint_path)
             print(f"Saving to {checkpoint_path}")
-            msg = 'Best Val mIoU: {: 4.4f}, Best Test mIoU: {: 4.4f}. Best Test mIoU (best val epoch {}): {: 4.4f}'.format(
-                        val_best_IoU, max(test_mIoUs), best_epoch, test_mIoUs[best_epoch])
-            logging.info(msg)
-            logging.info(IoU_array)
+            # msg = 'Best Val mIoU: {: 4.4f}, Best Test mIoU: {: 4.4f}. Best Test mIoU (best val epoch {}): {: 4.4f}'.format(
+            #             val_best_IoU, max(test_mIoUs), best_epoch, test_mIoUs[best_epoch])
+            # logging.info(msg)
+            # logging.info(IoU_array)
 
         if distributed:
             torch.distributed.barrier()

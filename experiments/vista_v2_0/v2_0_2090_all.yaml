@@ -3,7 +3,7 @@ CUDNN:
   DETERMINISTIC: false
   ENABLED: true
 GPUS: (0,1,2,3)
-OUTPUT_DIR: 'v2_0_2090_all'
+OUTPUT_DIR: 'output'
 LOG_DIR: 'log'
 WORKERS: 4
 PRINT_FREQ: 10
@@ -12,7 +12,6 @@ DATASET:
   DATASET: vista_v2_0
   ROOT: /scratch/mapillary_vistas
   TEST_SET: 'data/list/vista_v2_0/test.lst'
-  VAL_SET: 'data/list/vista_v2_0/val.lst'
   TRAIN_SET: 'data/list/vista_v2_0/train.lst'
   NUM_CLASSES: 116
 MODEL:
@@ -82,7 +81,7 @@ TRAIN:
   BATCH_SIZE_PER_GPU: 2
   SHUFFLE: true
   BEGIN_EPOCH: 0
-  END_EPOCH: 75
+  END_EPOCH: 50
   RESUME: true
   OPTIMIZER: sgd
   LR: 0.01
