@@ -12,7 +12,6 @@ DATASET:
   DATASET: vista_v1_2
   ROOT: /scratch/mapillary_vistas
   TEST_SET: 'data/list/vista_v1_2/test.lst'
-  VAL_SET: 'data/list/vista_v1_2/val.lst'
   TRAIN_SET: 'data/list/vista_v1_2/train.lst'
   NUM_CLASSES: 65
 MODEL:

@@ -536,3 +536,6 @@ def hrnet48(pretrained=True, progress=True, **kwargs):
     """
     return _hrnet('hrnet48', pretrained, progress,
                    **kwargs)
+    
+if __name__ == '__main__':
+    pass
