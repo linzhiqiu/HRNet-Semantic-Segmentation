@@ -681,3 +681,4 @@ def get_seg_model(cfg, **kwargs):
     model.init_weights(cfg.MODEL.PRETRAINED)
 
     return model
+

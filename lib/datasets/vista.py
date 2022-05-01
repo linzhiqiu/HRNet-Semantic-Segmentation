@@ -133,7 +133,7 @@ class Vista(BaseDataset):
         final_pred = torch.zeros([1, self.num_classes,
                                     ori_height,ori_width])
         for scale in scales:
-            print(f"Scale: {scale}")
+            # print(f"Scale: {scale}")
             new_img = self.multi_scale_aug(image=image,
                                            rand_scale=scale,
                                            rand_crop=False)
