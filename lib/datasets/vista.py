@@ -28,6 +28,7 @@ class Vista(BaseDataset):
                  downsample_rate=1,
                  scale_factor=16,
                  class_balancing=False,
+                 eval_all=False, # whether or not to include void class(es)
                  mean=[0.485, 0.456, 0.406], 
                  std=[0.229, 0.224, 0.225]):
 
@@ -35,7 +36,7 @@ class Vista(BaseDataset):
                 crop_size, downsample_rate, scale_factor, mean, std,)
         self.root = root # root dir for downloaded data
         self.list_path = list_path
-
+        self.eval_all = eval_all
         self.multi_scale = multi_scale
         self.flip = flip
         
@@ -59,7 +60,7 @@ class Vista(BaseDataset):
         self.num_classes = 0
         self.label_mapping = {}
         for idx, l in enumerate(self.labels):
-            if l['evaluate']:
+            if l['evaluate'] or self.eval_all:
                 self.label_mapping[idx] = self.num_classes
                 self.num_classes += 1
             else:
@@ -217,6 +218,7 @@ class Vista_V1_2(Vista):
                  downsample_rate=1,
                  scale_factor=16,
                  class_balancing=False,
+                 eval_all=True,
                  mean=[0.485, 0.456, 0.406], 
                  std=[0.229, 0.224, 0.225]):
         self.version = 'v1.2'
@@ -230,6 +232,7 @@ class Vista_V1_2(Vista):
                                          downsample_rate=downsample_rate,
                                          scale_factor=scale_factor,
                                          class_balancing=class_balancing,
+                                         eval_all=eval_all,
                                          mean=mean, 
                                          std=std)
 
@@ -245,6 +248,7 @@ class Vista_V2_0(Vista):
                  downsample_rate=1,
                  scale_factor=16,
                  class_balancing=False,
+                 eval_all=False,
                  mean=[0.485, 0.456, 0.406], 
                  std=[0.229, 0.224, 0.225]):
         self.version = 'v2.0'
@@ -258,5 +262,6 @@ class Vista_V2_0(Vista):
                                          downsample_rate=downsample_rate,
                                          scale_factor=scale_factor,
                                          class_balancing=class_balancing,
+                                         eval_all=eval_all,
                                          mean=mean, 
                                          std=std)
