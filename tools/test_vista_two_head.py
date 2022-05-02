@@ -52,7 +52,8 @@ def main():
 
     logger, final_output_dir, _ = create_logger(
         config, args.cfg, 'test')
-
+    final_output_dir = os.path.join(final_output_dir, 'two_head')
+    
     logger.info(pprint.pformat(args))
     logger.info(pprint.pformat(config))
 
@@ -66,17 +67,14 @@ def main():
         module = eval('models.'+config.MODEL.NAME)
         module.BatchNorm2d_class = module.BatchNorm2d = torch.nn.BatchNorm2d
     model = eval('models.'+config.MODEL.NAME +
-                 '.get_seg_model')(config)
+                 '.get_seg_model_two_head')(config)
 
     dump_input = torch.rand(
         (1, 3, config.TRAIN.IMAGE_SIZE[1], config.TRAIN.IMAGE_SIZE[0])
     )
     logger.info(get_model_summary(model.cuda(), dump_input.cuda()))
 
-    if config.TEST.MODEL_FILE:
-        model_state_file = config.TEST.MODEL_FILE
-    else:
-        model_state_file = os.path.join(final_output_dir, 'final_state.pth')        
+    model_state_file = os.path.join(final_output_dir, 'final_state.pth')        
     logger.info('=> loading model from {}'.format(model_state_file))
         
     pretrained_dict = torch.load(model_state_file)
@@ -93,14 +91,14 @@ def main():
 
     gpus = list(config.GPUS)
     model = nn.DataParallel(model, device_ids=gpus).cuda()
-
+    model = lambda inputs, *args, **kwargs: model(inputs, *args, **kwargs)[1]
+    
+    list_path_t_1_test = 'data/list/vista_v2_0/test.lst'
     # prepare data
     test_size = (config.TEST.IMAGE_SIZE[1], config.TEST.IMAGE_SIZE[0])
-    test_dataset = eval('datasets.'+config.DATASET.DATASET)(
+    test_dataset = eval('datasets.'+"vista_v2_0")(
                         root=config.DATASET.ROOT,
-                        list_path=config.DATASET.TEST_SET,
-                        num_samples=None,
-                        num_classes=config.DATASET.NUM_CLASSES,
+                        list_path=list_path_t_1_test,
                         multi_scale=False,
                         flip=False,
                         ignore_label=config.TRAIN.IGNORE_LABEL,
@@ -116,23 +114,16 @@ def main():
         pin_memory=True)
     
     start = timeit.default_timer()
-    if 'val' in config.DATASET.TEST_SET:
-        mean_IoU, IoU_array, pixel_acc, mean_acc = testval(config, 
-                                                           test_dataset, 
-                                                           testloader, 
-                                                           model)
-    
-        msg = 'MeanIU: {: 4.4f}, Pixel_Acc: {: 4.4f}, \
-            Mean_Acc: {: 4.4f}, Class IoU: '.format(mean_IoU, 
-            pixel_acc, mean_acc)
-        logging.info(msg)
-        logging.info(IoU_array)
-    elif 'test' in config.DATASET.TEST_SET:
-        test(config, 
-             test_dataset, 
-             testloader, 
-             model,
-             sv_dir=final_output_dir)
+    mean_IoU, IoU_array, pixel_acc, mean_acc = testval(config, 
+                                                       test_dataset, 
+                                                       testloader, 
+                                                       model)
+
+    msg = 'MeanIU: {: 4.4f}, Pixel_Acc: {: 4.4f}, \
+        Mean_Acc: {: 4.4f}, Class IoU: '.format(mean_IoU, 
+        pixel_acc, mean_acc)
+    logging.info(msg)
+    logging.info(IoU_array)
 
     end = timeit.default_timer()
     logger.info('Mins: %d' % np.int((end-start)/60))

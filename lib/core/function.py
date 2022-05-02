@@ -36,6 +36,61 @@ def reduce_tensor(inp):
         torch.distributed.reduce(reduced_inp, dst=0)
     return reduced_inp / world_size
 
+def train_two_head(config, epoch, num_epoch, epoch_iters, base_lr, num_iters,
+                   trainloader_t_0, trainloader_t_1, optimizer, model, writer_dict):
+    # Training
+    model.train()
+
+    batch_time = AverageMeter()
+    ave_loss = AverageMeter()
+    tic = time.time()
+    cur_iters = epoch*epoch_iters
+    writer = writer_dict['writer']
+    global_steps = writer_dict['train_global_steps']
+
+    for i_iter, (batch_t_0, batch_t_1) in enumerate(zip(trainloader_t_0, trainloader_t_1)):
+        images_t_0, labels_t_0, _, _ = batch_t_0
+        images_t_1, labels_t_1, _, _ = batch_t_1
+        
+        images = torch.cat((images_t_0, images_t_1), 0)
+        images = images.cuda()
+        labels = torch.cat((labels_t_0, labels_t_1), 0)
+        labels = labels.long().cuda()
+        time_indices = [0 for _ in images_t_0.shape[0]] + [1 for _ in images_t_1.shape[0]]
+        loss, _ = model(images, labels, time_indices)
+        loss = loss.mean()
+
+        if dist.is_distributed():
+            reduced_loss = reduce_tensor(loss)
+        else:
+            reduced_loss = loss
+
+        model.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+        # measure elapsed time
+        batch_time.update(time.time() - tic)
+        tic = time.time()
+
+        # update average loss
+        ave_loss.update(reduced_loss.item())
+
+        lr = adjust_learning_rate(optimizer,
+                                  base_lr,
+                                  num_iters,
+                                  i_iter+cur_iters)
+
+        if i_iter % config.PRINT_FREQ == 0 and dist.get_rank() == 0:
+            msg = 'Epoch: [{}/{}] Iter:[{}/{}], Time: {:.2f}, ' \
+                  'lr: {}, Loss: {:.6f}' .format(
+                      epoch, num_epoch, i_iter, epoch_iters,
+                      batch_time.average(), [x['lr'] for x in optimizer.param_groups], ave_loss.average())
+            logging.info(msg)
+
+    writer.add_scalar('train_loss', ave_loss.average(), global_steps)
+    writer_dict['train_global_steps'] = global_steps + 1
+
 
 def train(config, epoch, num_epoch, epoch_iters, base_lr,
           num_iters, trainloader, optimizer, model, writer_dict):

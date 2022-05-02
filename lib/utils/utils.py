@@ -35,6 +35,27 @@ class FullModel(nn.Module):
     loss = self.loss(outputs, labels)
     return torch.unsqueeze(loss,0), outputs
 
+class FullModelTwoHead(nn.Module):
+  """
+  Distribute the loss on multi-gpu to reduce 
+  the memory cost in the main gpu.
+  You can check the following discussion.
+  https://discuss.pytorch.org/t/dataparallel-imbalanced-memory-usage/22551/21
+  """
+  def __init__(self, model, loss_0, loss_1):
+    super(FullModelTwoHead, self).__init__()
+    self.model = model
+    self.loss_0 = loss_0
+    self.loss_1 = loss_1
+
+  def forward(self, inputs, labels, time_indices, *args, **kwargs):
+    outputs_0, outputs_1 = self.model(inputs, *args, **kwargs)
+    losses = [self.loss_0(outputs_0[i], labels[i]) if time_indices[i] == 0 else 
+              self.loss_1(outputs_1[i], labels[i])
+              for i in range(len(time_indices))]
+    loss = torch.cat(losses, 0).mean()
+    return torch.unsqueeze(loss,0), outputs_0, outputs_1
+
 class AverageMeter(object):
     """Computes and stores the average and current value"""
 

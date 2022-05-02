@@ -682,3 +682,114 @@ def get_seg_model(cfg, **kwargs):
 
     return model
 
+class HighResolutionNetTwoHead(HighResolutionNet):
+    
+    def __init__(self, config, **kwargs):
+        global ALIGN_CORNERS
+        extra = config.MODEL.EXTRA
+        super(HighResolutionNetTwoHead, self).__init__(config, **kwargs)
+
+        self.cls_head_0 = nn.Conv2d(
+            ocr_mid_channels, 65, kernel_size=1, stride=1, padding=0, bias=True)
+
+        self.aux_head_0 = nn.Sequential(
+            nn.Conv2d(last_inp_channels, last_inp_channels,
+                      kernel_size=1, stride=1, padding=0),
+            BatchNorm2d(last_inp_channels),
+            nn.ReLU(inplace=relu_inplace),
+            nn.Conv2d(last_inp_channels, 65,
+                      kernel_size=1, stride=1, padding=0, bias=True)
+        )
+        
+        self.cls_head_1 = nn.Conv2d(
+            ocr_mid_channels, 116, kernel_size=1, stride=1, padding=0, bias=True)
+
+        self.aux_head_1 = nn.Sequential(
+            nn.Conv2d(last_inp_channels, last_inp_channels,
+                      kernel_size=1, stride=1, padding=0),
+            BatchNorm2d(last_inp_channels),
+            nn.ReLU(inplace=relu_inplace),
+            nn.Conv2d(last_inp_channels, 116,
+                      kernel_size=1, stride=1, padding=0, bias=True)
+        )
+
+    def forward(self, x):
+        x = self.conv1(x)
+        x = self.bn1(x)
+        x = self.relu(x)
+        x = self.conv2(x)
+        x = self.bn2(x)
+        x = self.relu(x)
+        x = self.layer1(x)
+
+        x_list = []
+        for i in range(self.stage2_cfg['NUM_BRANCHES']):
+            if self.transition1[i] is not None:
+                x_list.append(self.transition1[i](x))
+            else:
+                x_list.append(x)
+        y_list = self.stage2(x_list)
+
+        x_list = []
+        for i in range(self.stage3_cfg['NUM_BRANCHES']):
+            if self.transition2[i] is not None:
+                if i < self.stage2_cfg['NUM_BRANCHES']:
+                    x_list.append(self.transition2[i](y_list[i]))
+                else:
+                    x_list.append(self.transition2[i](y_list[-1]))
+            else:
+                x_list.append(y_list[i])
+        y_list = self.stage3(x_list)
+
+        x_list = []
+        for i in range(self.stage4_cfg['NUM_BRANCHES']):
+            if self.transition3[i] is not None:
+                if i < self.stage3_cfg['NUM_BRANCHES']:
+                    x_list.append(self.transition3[i](y_list[i]))
+                else:
+                    x_list.append(self.transition3[i](y_list[-1]))
+            else:
+                x_list.append(y_list[i])
+        x = self.stage4(x_list)
+
+        # Upsampling
+        x0_h, x0_w = x[0].size(2), x[0].size(3)
+        x1 = F.interpolate(x[1], size=(x0_h, x0_w),
+                        mode='bilinear', align_corners=ALIGN_CORNERS)
+        x2 = F.interpolate(x[2], size=(x0_h, x0_w),
+                        mode='bilinear', align_corners=ALIGN_CORNERS)
+        x3 = F.interpolate(x[3], size=(x0_h, x0_w),
+                        mode='bilinear', align_corners=ALIGN_CORNERS)
+
+        feats = torch.cat([x[0], x1, x2, x3], 1)
+
+        out_aux_seg_0 = []
+        out_aux_seg_1 = []
+
+        # ocr
+        out_aux_0 = self.aux_head_0(feats)
+        out_aux_1 = self.aux_head_1(feats)
+        # compute contrast feature
+        feats = self.conv3x3_ocr(feats)
+
+        context = self.ocr_gather_head(feats, out_aux)
+        feats = self.ocr_distri_head(feats, context)
+
+        out_0 = self.cls_head_0(feats)
+        out_1 = self.cls_head_1(feats)
+
+        out_aux_seg_0.append(out_aux_0)
+        out_aux_seg_0.append(out_0)
+        
+        out_aux_seg_1.append(out_aux_1)
+        out_aux_seg_1.append(out_1)
+
+        return out_aux_seg_0, out_aux_seg_1
+
+
+def get_seg_model_two_head(cfg, **kwargs):
+    model = HighResolutionNetTwoHead(cfg, **kwargs)
+    model.init_weights(cfg.MODEL.PRETRAINED)
+
+    return model
+
