@@ -13,7 +13,7 @@ DATASET:
   ROOT: /scratch/mapillary_vistas
   TEST_SET: 'data/list/vista_v2_0_10000/test.lst'
   TRAIN_SET: 'data/list/vista_v2_0_10000/train_half_0.lst'
-  NUM_CLASSES: 66
+  NUM_CLASSES: 116
 MODEL:
   NAME: seg_hrnet_ocr
   NUM_OUTPUTS: 2
