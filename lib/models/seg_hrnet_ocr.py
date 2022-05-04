@@ -691,7 +691,7 @@ class HighResolutionNetTwoHead(HighResolutionNet):
         super(HighResolutionNetTwoHead, self).__init__(config, **kwargs)
 
         self.cls_head_0 = nn.Conv2d(
-            self.ocr_mid_channels, 65, kernel_size=1, stride=1, padding=0, bias=True)
+            self.ocr_mid_channels, 66, kernel_size=1, stride=1, padding=0, bias=True)
 
         self.aux_head_0 = nn.Sequential(
             nn.Conv2d(self.last_inp_channels, self.last_inp_channels,
