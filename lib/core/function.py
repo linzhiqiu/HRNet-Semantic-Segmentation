@@ -52,8 +52,10 @@ def train_two_head(config, epoch, num_epoch, epoch_iters, base_lr, num_iters,
         images_t_0, labels_t_0, _, _ = batch_t_0
         images_t_1, labels_t_1, _, _ = batch_t_1
         
-        images = torch.cat((images_t_0, images_t_1), 0)
-        images = images.cuda()
+        # images = torch.cat((images_t_0, images_t_1), 0)
+        # images = images.cuda()
+        images_t_0 = images_t_0.cuda()
+        images_t_1 = images_t_1.cuda()
         labels_t_0 = labels_t_0.long().cuda()
         labels_t_1 = labels_t_1.long().cuda()
         
@@ -66,7 +68,7 @@ def train_two_head(config, epoch, num_epoch, epoch_iters, base_lr, num_iters,
         for i in range(images_t_1.shape[0]):
             time_indices_1.append(counter)
             counter += 1
-        loss, _, _ = model(images, labels_t_0, labels_t_1, time_indices_0, time_indices_1)
+        loss, _, _ = model(images_t_0, images_t_1, labels_t_0, labels_t_1, time_indices_0, time_indices_1)
         loss = loss.mean()
 
         if dist.is_distributed():

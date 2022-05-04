@@ -80,6 +80,7 @@ def main():
     logger.info('=> loading model from {}'.format(model_state_file))
         
     pretrained_dict = torch.load(model_state_file)
+    import pdb; pdb.set_trace()
     if 'state_dict' in pretrained_dict:
         pretrained_dict = pretrained_dict['state_dict']
     model_dict = model.state_dict()
@@ -108,7 +109,7 @@ def main():
 
     testloader = torch.utils.data.DataLoader(
         test_dataset,
-        batch_size=1,
+        batch_size=len(gpus),
         shuffle=False,
         num_workers=config.WORKERS,
         pin_memory=True)

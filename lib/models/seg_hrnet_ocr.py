@@ -714,7 +714,7 @@ class HighResolutionNetTwoHead(HighResolutionNet):
                       kernel_size=1, stride=1, padding=0, bias=True)
         )
 
-    def forward(self, x):
+    def forward(self, x, time=0):
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
@@ -764,30 +764,31 @@ class HighResolutionNetTwoHead(HighResolutionNet):
 
         feats = torch.cat([x[0], x1, x2, x3], 1)
 
-        out_aux_seg_0 = []
-        out_aux_seg_1 = []
+        if time == 0:
+            out_aux_seg_0 = []
+            out_aux_0 = self.aux_head_0(feats)
+        elif time == 1:
+            out_aux_seg_1 = []
+            out_aux_1 = self.aux_head_1(feats)
 
         # ocr
-        out_aux_0 = self.aux_head_0(feats)
-        out_aux_1 = self.aux_head_1(feats)
         # compute contrast feature
         feats = self.conv3x3_ocr(feats)
-
-        context_0 = self.ocr_gather_head(feats, out_aux_0)
-        context_1 = self.ocr_gather_head(feats, out_aux_1)
-        feats_0 = self.ocr_distri_head(feats, context_0)
-        feats_1 = self.ocr_distri_head(feats, context_1)
-
-        out_0 = self.cls_head_0(feats_0)
-        out_1 = self.cls_head_1(feats_1)
-
-        out_aux_seg_0.append(out_aux_0)
-        out_aux_seg_0.append(out_0)
         
-        out_aux_seg_1.append(out_aux_1)
-        out_aux_seg_1.append(out_1)
-
-        return out_aux_seg_0, out_aux_seg_1
+        if time == 0:
+            context_0 = self.ocr_gather_head(feats, out_aux_0)
+            feats_0 = self.ocr_distri_head(feats, context_0)
+            out_0 = self.cls_head_0(feats_0)
+            out_aux_seg_0.append(out_aux_0)
+            out_aux_seg_0.append(out_0)
+            return out_aux_seg_0
+        elif time == 1:
+            context_1 = self.ocr_gather_head(feats, out_aux_1)
+            feats_1 = self.ocr_distri_head(feats, context_1)
+            out_1 = self.cls_head_1(feats_1)
+            out_aux_seg_1.append(out_aux_1)
+            out_aux_seg_1.append(out_1)
+            return out_aux_seg_1
 
 
 def get_seg_model_two_head(cfg, **kwargs):
