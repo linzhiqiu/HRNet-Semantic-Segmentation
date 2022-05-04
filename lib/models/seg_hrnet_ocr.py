@@ -698,7 +698,7 @@ class HighResolutionNetTwoHead(HighResolutionNet):
                       kernel_size=1, stride=1, padding=0),
             BatchNorm2d(self.last_inp_channels),
             nn.ReLU(inplace=relu_inplace),
-            nn.Conv2d(self.last_inp_channels, 65,
+            nn.Conv2d(self.last_inp_channels, 66,
                       kernel_size=1, stride=1, padding=0, bias=True)
         )
         
