@@ -51,7 +51,11 @@ class FullModelTwoHead(nn.Module):
   def forward(self, inputs, labels_t_0, labels_t_1, time_indices_0, time_indices_1, *args, **kwargs):
     outputs_0, outputs_1 = self.model(inputs, *args, **kwargs)
     outputs_0 = [outputs_0[i][time_indices_0] for i in range(len(outputs_0))]
+    for i in range(len(outputs_0)):
+        print(f"outputs_0 has shape at idx {i} being {outputs_0[i].shape}")
     outputs_1 = [outputs_1[i][time_indices_1] for i in range(len(outputs_1))]
+    for i in range(len(outputs_1)):
+        print(f"outputs_1 has shape at idx {i} being {outputs_1[i].shape}")
     loss_0 = self.loss_0(outputs_0, labels_t_0)
     loss_1 = self.loss_1(outputs_1, labels_t_1)
     loss = (loss_0 + loss_1) / 2.
