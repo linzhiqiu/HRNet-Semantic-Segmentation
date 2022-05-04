@@ -182,7 +182,7 @@ def main():
         model = model.to(device)
         model = torch.nn.parallel.DistributedDataParallel(
             model,
-            # find_unused_parameters=True,
+            find_unused_parameters=True,
             device_ids=[local_rank],
             output_device=local_rank
         )
