@@ -48,12 +48,12 @@ class FullModelTwoHead(nn.Module):
     self.loss_0 = loss_0
     self.loss_1 = loss_1
 
-  def forward(self, inputs, labels, time_indices_0, time_indices_1, *args, **kwargs):
+  def forward(self, inputs, labels_t_0, labels_t_1, time_indices_0, time_indices_1, *args, **kwargs):
     outputs_0, outputs_1 = self.model(inputs, *args, **kwargs)
     outputs_0 = [outputs_0[i][time_indices_0] for i in range(len(outputs_0))]
     outputs_1 = [outputs_1[i][time_indices_1] for i in range(len(outputs_1))]
-    loss_0 = self.loss_0(outputs_0, labels[time_indices_0])
-    loss_1 = self.loss_1(outputs_1, labels[time_indices_1])
+    loss_0 = self.loss_0(outputs_0, labels_t_0)
+    loss_1 = self.loss_1(outputs_1, labels_t_1)
     loss = (loss_0 + loss_1) / 2.
     return torch.unsqueeze(loss,0), outputs_0, outputs_1
 
