@@ -29,7 +29,7 @@ import datasets
 from config import config
 from config import update_config
 from core.criterion import CrossEntropy, OhemCrossEntropy
-from core.function import train, validate_vista
+from core.function import train_two_head
 from utils.modelsummary import get_model_summary
 from utils.utils import create_logger, FullModelTwoHead
 
@@ -72,7 +72,8 @@ def main():
     logger, final_output_dir, tb_log_dir = create_logger(
         config, args.cfg, 'train')
     
-    prev_model_path = os.path.join(final_output_dir, 'final_state.pth')
+    prev_model_path = os.path.join("output/vista_v1_2/v1_2_3090_half_0_200_epochs", 'final_state.pth')
+    # prev_model_path = os.path.join(final_output_dir, 'final_state.pth') #TODO:
     final_output_dir = os.path.join(final_output_dir, 'two_head')
 
     logger.info(pprint.pformat(args))
@@ -145,8 +146,9 @@ def main():
     trainloader_t_0 = torch.utils.data.DataLoader(
         train_dataset_t_0,
         batch_size=int(batch_size / 2),
-        shuffle=config.TRAIN.SHUFFLE and train_sampler is None,
-        num_workers=config.WORKERS,
+        shuffle=False,
+        # num_workers=config.WORKERS,
+        num_workers=0,
         pin_memory=True,
         drop_last=True,
         sampler=train_sampler_t_0)
@@ -155,8 +157,9 @@ def main():
     trainloader_t_1 = torch.utils.data.DataLoader(
         train_dataset_t_1,
         batch_size=int(batch_size / 2),
-        shuffle=config.TRAIN.SHUFFLE and train_sampler is None,
-        num_workers=config.WORKERS,
+        shuffle=False,
+        # num_workers=config.WORKERS,
+        num_workers=0,
         pin_memory=True,
         drop_last=True,
         sampler=train_sampler_t_1)
@@ -215,7 +218,7 @@ def main():
     else:
         raise ValueError('Only Support SGD optimizer')
 
-    epoch_iters = int(train_dataset.__len__() / config.TRAIN.BATCH_SIZE_PER_GPU / len(gpus))
+    epoch_iters = int(train_dataset_t_1.__len__() * 2 / config.TRAIN.BATCH_SIZE_PER_GPU / len(gpus))
     
     
     # Load last final_state
@@ -230,7 +233,9 @@ def main():
     #         '=> loading {} from pretrained model'.format(k))
     model_dict.update(pretrained_dict)
     model.load_state_dict(model_dict)
-    
+    if distributed:
+        torch.distributed.barrier()
+
     last_epoch = 0
     if config.TRAIN.RESUME:
         model_state_file = os.path.join(final_output_dir,
@@ -248,8 +253,8 @@ def main():
             torch.distributed.barrier()
 
     start = timeit.default_timer()
-    end_epoch = config.TRAIN.END_EPOCH
-    num_iters = config.TRAIN.END_EPOCH * epoch_iters
+    end_epoch = int(config.TRAIN.END_EPOCH / 2) # TODO: Make sure this is correct
+    num_iters = end_epoch * epoch_iters
     for epoch in range(last_epoch, end_epoch):
         current_trainloader_t_0 = trainloader_t_0
         current_trainloader_t_1 = trainloader_t_1

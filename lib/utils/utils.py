@@ -48,12 +48,13 @@ class FullModelTwoHead(nn.Module):
     self.loss_0 = loss_0
     self.loss_1 = loss_1
 
-  def forward(self, inputs, labels, time_indices, *args, **kwargs):
+  def forward(self, inputs, labels, time_indices_0, time_indices_1, *args, **kwargs):
     outputs_0, outputs_1 = self.model(inputs, *args, **kwargs)
-    losses = [self.loss_0(outputs_0[i], labels[i]) if time_indices[i] == 0 else 
-              self.loss_1(outputs_1[i], labels[i])
-              for i in range(len(time_indices))]
-    loss = torch.cat(losses, 0).mean()
+    outputs_0 = [outputs_0[i][time_indices_0] for i in range(len(outputs_0))]
+    outputs_1 = [outputs_1[i][time_indices_1] for i in range(len(outputs_1))]
+    loss_0 = self.loss_0(outputs_0, labels[time_indices_0])
+    loss_1 = self.loss_1(outputs_1, labels[time_indices_1])
+    loss = (loss_0 + loss_1) / 2.
     return torch.unsqueeze(loss,0), outputs_0, outputs_1
 
 class AverageMeter(object):

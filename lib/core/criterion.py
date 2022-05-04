@@ -26,12 +26,6 @@ class CrossEntropy(nn.Module):
         if ph != h or pw != w:
             score = F.interpolate(input=score, size=(
                 h, w), mode='bilinear', align_corners=config.MODEL.ALIGN_CORNERS)
-        # print("Target shape:")
-        # print(target.shape)
-        # print("Score shape:")
-        # print(score.shape)
-        # print("Target:")
-        # print(target)
 
         loss = self.criterion(score, target)
 
@@ -44,7 +38,8 @@ class CrossEntropy(nn.Module):
 
         weights = config.LOSS.BALANCE_WEIGHTS
         assert len(weights) == len(score)
-
+        # print(f"Score[0] has shape {score[0].shape}")
+        # print(f"Score[1] has shape {score[1].shape}")
         return sum([w * self._forward(x, target) for (w, x) in zip(weights, score)])
 
 

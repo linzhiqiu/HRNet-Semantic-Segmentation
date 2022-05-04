@@ -468,33 +468,33 @@ class HighResolutionNet(nn.Module):
         self.stage4, pre_stage_channels = self._make_stage(
             self.stage4_cfg, num_channels, multi_scale_output=True)
 
-        last_inp_channels = np.int(np.sum(pre_stage_channels))
-        ocr_mid_channels = config.MODEL.OCR.MID_CHANNELS
-        ocr_key_channels = config.MODEL.OCR.KEY_CHANNELS
+        self.last_inp_channels = np.int(np.sum(pre_stage_channels))
+        self.ocr_mid_channels = config.MODEL.OCR.MID_CHANNELS
+        self.ocr_key_channels = config.MODEL.OCR.KEY_CHANNELS
 
         self.conv3x3_ocr = nn.Sequential(
-            nn.Conv2d(last_inp_channels, ocr_mid_channels,
+            nn.Conv2d(self.last_inp_channels, self.ocr_mid_channels,
                       kernel_size=3, stride=1, padding=1),
-            BatchNorm2d(ocr_mid_channels),
+            BatchNorm2d(self.ocr_mid_channels),
             nn.ReLU(inplace=relu_inplace),
         )
         self.ocr_gather_head = SpatialGather_Module(config.DATASET.NUM_CLASSES)
 
-        self.ocr_distri_head = SpatialOCR_Module(in_channels=ocr_mid_channels,
-                                                 key_channels=ocr_key_channels,
-                                                 out_channels=ocr_mid_channels,
+        self.ocr_distri_head = SpatialOCR_Module(in_channels=self.ocr_mid_channels,
+                                                 key_channels=self.ocr_key_channels,
+                                                 out_channels=self.ocr_mid_channels,
                                                  scale=1,
                                                  dropout=0.05,
                                                  )
         self.cls_head = nn.Conv2d(
-            ocr_mid_channels, config.DATASET.NUM_CLASSES, kernel_size=1, stride=1, padding=0, bias=True)
+            self.ocr_mid_channels, config.DATASET.NUM_CLASSES, kernel_size=1, stride=1, padding=0, bias=True)
 
         self.aux_head = nn.Sequential(
-            nn.Conv2d(last_inp_channels, last_inp_channels,
+            nn.Conv2d(self.last_inp_channels, self.last_inp_channels,
                       kernel_size=1, stride=1, padding=0),
-            BatchNorm2d(last_inp_channels),
+            BatchNorm2d(self.last_inp_channels),
             nn.ReLU(inplace=relu_inplace),
-            nn.Conv2d(last_inp_channels, config.DATASET.NUM_CLASSES,
+            nn.Conv2d(self.last_inp_channels, config.DATASET.NUM_CLASSES,
                       kernel_size=1, stride=1, padding=0, bias=True)
         )
         
@@ -687,29 +687,30 @@ class HighResolutionNetTwoHead(HighResolutionNet):
     def __init__(self, config, **kwargs):
         global ALIGN_CORNERS
         extra = config.MODEL.EXTRA
+
         super(HighResolutionNetTwoHead, self).__init__(config, **kwargs)
 
         self.cls_head_0 = nn.Conv2d(
-            ocr_mid_channels, 65, kernel_size=1, stride=1, padding=0, bias=True)
+            self.ocr_mid_channels, 65, kernel_size=1, stride=1, padding=0, bias=True)
 
         self.aux_head_0 = nn.Sequential(
-            nn.Conv2d(last_inp_channels, last_inp_channels,
+            nn.Conv2d(self.last_inp_channels, self.last_inp_channels,
                       kernel_size=1, stride=1, padding=0),
-            BatchNorm2d(last_inp_channels),
+            BatchNorm2d(self.last_inp_channels),
             nn.ReLU(inplace=relu_inplace),
-            nn.Conv2d(last_inp_channels, 65,
+            nn.Conv2d(self.last_inp_channels, 65,
                       kernel_size=1, stride=1, padding=0, bias=True)
         )
         
         self.cls_head_1 = nn.Conv2d(
-            ocr_mid_channels, 116, kernel_size=1, stride=1, padding=0, bias=True)
+            self.ocr_mid_channels, 116, kernel_size=1, stride=1, padding=0, bias=True)
 
         self.aux_head_1 = nn.Sequential(
-            nn.Conv2d(last_inp_channels, last_inp_channels,
+            nn.Conv2d(self.last_inp_channels, self.last_inp_channels,
                       kernel_size=1, stride=1, padding=0),
-            BatchNorm2d(last_inp_channels),
+            BatchNorm2d(self.last_inp_channels),
             nn.ReLU(inplace=relu_inplace),
-            nn.Conv2d(last_inp_channels, 116,
+            nn.Conv2d(self.last_inp_channels, 116,
                       kernel_size=1, stride=1, padding=0, bias=True)
         )
 
@@ -772,11 +773,13 @@ class HighResolutionNetTwoHead(HighResolutionNet):
         # compute contrast feature
         feats = self.conv3x3_ocr(feats)
 
-        context = self.ocr_gather_head(feats, out_aux)
-        feats = self.ocr_distri_head(feats, context)
+        context_0 = self.ocr_gather_head(feats, out_aux_0)
+        context_1 = self.ocr_gather_head(feats, out_aux_1)
+        feats_0 = self.ocr_distri_head(feats, context_0)
+        feats_1 = self.ocr_distri_head(feats, context_1)
 
-        out_0 = self.cls_head_0(feats)
-        out_1 = self.cls_head_1(feats)
+        out_0 = self.cls_head_0(feats_0)
+        out_1 = self.cls_head_1(feats_1)
 
         out_aux_seg_0.append(out_aux_0)
         out_aux_seg_0.append(out_0)
