@@ -3,7 +3,6 @@
 # Licensed under the MIT License.
 # Written by Zhiqiu Lin
 # ------------------------------------------------------------------------------
-# torchrun --standalone --nnodes=1 --nproc_per_node=4 tools/train_vista_two_head.py --cfg experiments/vista_v1_2/v1_2_2090.yaml
 import argparse
 import os
 import pprint
@@ -28,10 +27,10 @@ import models
 import datasets
 from config import config
 from config import update_config
-from core.criterion import CrossEntropy, OhemCrossEntropy
+from core.criterion import NLLLoss, OhemCrossEntropy
 from core.function import train_multi_head
 from utils.modelsummary import get_model_summary
-from utils.utils import create_logger, FullModelTwoHead
+from utils.utils import create_logger, FullModelSingleHead
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Train segmentation network')
@@ -73,8 +72,7 @@ def main():
         config, args.cfg, 'train')
     
     prev_model_path = os.path.join("output/vista_v1_2/half_0", 'final_state.pth')
-    # prev_model_path = os.path.join(final_output_dir, 'final_state.pth') #TODO:
-    final_output_dir = os.path.join(final_output_dir, 'two_head')
+    final_output_dir = os.path.join(final_output_dir, 'single_head')
 
     logger.info(pprint.pformat(args))
     logger.info(config)
@@ -101,7 +99,7 @@ def main():
 
     # build model
     model = eval('models.'+config.MODEL.NAME +
-                 '.get_seg_model_two_head')(config)
+                 '.get_seg_model')(config)
     
     if distributed:
         batch_size = config.TRAIN.BATCH_SIZE_PER_GPU
@@ -168,10 +166,8 @@ def main():
                                         min_kept=config.LOSS.OHEMKEEP,
                                         weight=train_dataset.class_weights)
     else:
-        criterion_t_0 = CrossEntropy(ignore_label=config.TRAIN.IGNORE_LABEL,
-                                     weight=None)
-        criterion_t_1 = CrossEntropy(ignore_label=config.TRAIN.IGNORE_LABEL,
-                                     weight=None)
+        criterion = NLLLoss(ignore_label=config.TRAIN.IGNORE_LABEL,
+                            weight=None)
     # Load last final_state
     pretrained_dict = torch.load(prev_model_path, map_location={'cuda:0': 'cpu'})
     if 'state_dict' in pretrained_dict:
@@ -179,19 +175,12 @@ def main():
     new_pretrained_dict = {}
     model_dict = model.state_dict()
     for k, v in pretrained_dict.items():
-        if k[6:14] == 'cls_head':
+        if k[6:14] in ['cls_head' ,'aux_head']:
             if local_rank <= 0:
                 logger.info(
-                    '=> changing {} from pretrained model'.format(k))
-            new_k = k.replace("cls_head", "cls_head_0")
-            new_pretrained_dict[new_k[6:]] = v
-        elif k[6:14] == 'aux_head':
-            new_k = k.replace("aux_head", "aux_head_0")
-            if local_rank <= 0:
-                logger.info(
-                    '=> changing {} from pretrained model'.format(k))
-            new_pretrained_dict[new_k[6:]] = v
-        elif k[6:] in model_dict.keys():
+                    '=> skipping {} from pretrained model'.format(k))
+            continue
+        if k[6:] in model_dict.keys():
             new_pretrained_dict[k[6:]] = v
     for k, _ in new_pretrained_dict.items():
         if local_rank <= 0:
@@ -202,12 +191,12 @@ def main():
     model.load_state_dict(model_dict)
     if distributed:
         torch.distributed.barrier()
-    model = FullModelTwoHead(model, criterion_t_0, criterion_t_1)
+    model = FullModelSingleHead(model, criterion)
     if distributed:
         model = model.to(device)
         model = torch.nn.parallel.DistributedDataParallel(
             model,
-            find_unused_parameters=True,
+            # find_unused_parameters=True,
             device_ids=[local_rank],
             output_device=local_rank
         )

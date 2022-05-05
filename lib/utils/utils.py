@@ -48,7 +48,7 @@ class FullModelTwoHead(nn.Module):
     self.loss_0 = loss_0
     self.loss_1 = loss_1
 
-  def forward(self, inputs_t_0, inputs_t_1, labels_t_0, labels_t_1, time_indices_0, time_indices_1):
+  def forward(self, inputs_t_0, inputs_t_1, labels_t_0, labels_t_1):
     outputs_0 = self.model(inputs_t_0, time=0)
     outputs_1 = self.model(inputs_t_1, time=1)
     # outputs_0 = [outputs_0[i][time_indices_0] for i in range(len(outputs_0))]
@@ -61,6 +61,36 @@ class FullModelTwoHead(nn.Module):
     loss_1 = self.loss_1(outputs_1, labels_t_1)
     loss = (loss_0 + loss_1) / 2.
     return torch.unsqueeze(loss,0), outputs_0, outputs_1
+
+class FullModelSingleHead(nn.Module):
+  """
+  Distribute the loss on multi-gpu to reduce 
+  the memory cost in the main gpu.
+  You can check the following discussion.
+  https://discuss.pytorch.org/t/dataparallel-imbalanced-memory-usage/22551/21
+  """
+  def __init__(self, model, loss, edge_matrix_path="./edge_matrix_116.pt"):
+    super(FullModelSingleHead, self).__init__()
+    self.model = model
+    self.loss = loss # this is nll loss instead of cross entropy loss
+    self.edge_matrix = torch.load(edge_matrix_path).float().cuda()
+    self.log_softmax = torch.nn.LogSoftmax(dim=1)
+    self.softmax = torch.nn.Softmax(dim=1)
+
+  def forward(self, inputs_t_0, inputs_t_1, labels_t_0, labels_t_1):
+    outputs_0 = self.model(inputs_t_0)
+    outputs_1 = self.model(inputs_t_1)
+    
+    for i in range(len(outputs_0)):
+      outputs_0[i] = outputs_0[i] - outputs_0[i].max(1)[0].unsqueeze(1)
+      outputs_0[i] = self.softmax(outputs_0[i])
+      outputs_0[i] = torch.log(torch.matmul(outputs_0[i].transpose(1,3), self.edge_matrix).transpose(1,3))
+    outputs_1 = [self.log_softmax(outputs_1[i]) for i in range(len(outputs_1))]
+    loss_0 = self.loss(outputs_0, labels_t_0)
+    loss_1 = self.loss(outputs_1, labels_t_1)
+    loss = (loss_0 + loss_1) / 2.
+    return torch.unsqueeze(loss,0), outputs_0, outputs_1
+
 
 class AverageMeter(object):
     """Computes and stores the average and current value"""

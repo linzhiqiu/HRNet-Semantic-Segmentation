@@ -36,7 +36,7 @@ def reduce_tensor(inp):
         torch.distributed.reduce(reduced_inp, dst=0)
     return reduced_inp / world_size
 
-def train_two_head(config, epoch, num_epoch, epoch_iters, base_lr, num_iters,
+def train_multi_head(config, epoch, num_epoch, epoch_iters, base_lr, num_iters,
                    trainloader_t_0, trainloader_t_1, optimizer, model, writer_dict):
     # Training
     model.train()
@@ -59,16 +59,16 @@ def train_two_head(config, epoch, num_epoch, epoch_iters, base_lr, num_iters,
         labels_t_0 = labels_t_0.long().cuda()
         labels_t_1 = labels_t_1.long().cuda()
         
-        counter = 0
-        time_indices_0 = []
-        time_indices_1 = []
-        for i in range(images_t_0.shape[0]):
-            time_indices_0.append(counter)
-            counter += 1
-        for i in range(images_t_1.shape[0]):
-            time_indices_1.append(counter)
-            counter += 1
-        loss, _, _ = model(images_t_0, images_t_1, labels_t_0, labels_t_1, time_indices_0, time_indices_1)
+        # counter = 0
+        # time_indices_0 = []
+        # time_indices_1 = []
+        # for i in range(images_t_0.shape[0]):
+        #     time_indices_0.append(counter)
+        #     counter += 1
+        # for i in range(images_t_1.shape[0]):
+        #     time_indices_1.append(counter)
+        #     counter += 1
+        loss, _, _ = model(images_t_0, images_t_1, labels_t_0, labels_t_1)
         loss = loss.mean()
 
         if dist.is_distributed():
