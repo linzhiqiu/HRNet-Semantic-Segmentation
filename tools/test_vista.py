@@ -124,6 +124,14 @@ def main():
         pixel_acc, mean_acc)
     logging.info(msg)
     logging.info(IoU_array)
+    
+    result = {
+        'mean_IoU' : mean_IoU,
+        'IoU_array' : IoU_array, 
+        'pixel_acc' : pixel_acc, 
+        'mean_acc' : mean_acc,
+    }
+    torch.save(result, os.path.join(final_output_dir, "test_result.pt"))
     # elif 'test' in config.DATASET.TEST_SET:
     #     test(config, 
     #          test_dataset, 
