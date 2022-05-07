@@ -92,6 +92,7 @@ def main():
         model_dict.update(pretrained_dict)
         model.load_state_dict(model_dict)
     elif args.mode == 'two_head':
+        new_pretrained_dict = {}
         for k, v in pretrained_dict.items():
             if k[6:16] == 'cls_head_1':
                 print('=> changing {} from pretrained model'.format(k))
