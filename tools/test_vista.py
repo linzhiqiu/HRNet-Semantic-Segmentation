@@ -41,6 +41,7 @@ def parse_args():
                         help="Modify config options using the command-line",
                         default=None,
                         nargs=argparse.REMAINDER)
+    parser.add_argument("--mode", type=str, default='single_head', choices=['single_head', 'two_head']) 
 
     args = parser.parse_args()
     update_config(config, args)
@@ -73,23 +74,39 @@ def main():
     )
     logger.info(get_model_summary(model.cuda(), dump_input.cuda()))
 
-    if config.TEST.MODEL_FILE:
-        model_state_file = config.TEST.MODEL_FILE
-    else:
-        model_state_file = os.path.join(final_output_dir, 'final_state.pth')        
+    model_state_file = config.TEST.MODEL_FILE
+    model_state_folder = model_state_file[:model_state_file.rfind(os.sep)]
     logger.info('=> loading model from {}'.format(model_state_file))
-        
+    
     pretrained_dict = torch.load(model_state_file)
     if 'state_dict' in pretrained_dict:
         pretrained_dict = pretrained_dict['state_dict']
     model_dict = model.state_dict()
-    pretrained_dict = {k[6:]: v for k, v in pretrained_dict.items()
-                        if k[6:] in model_dict.keys()}
-    for k, _ in pretrained_dict.items():
-        logger.info(
-            '=> loading {} from pretrained model'.format(k))
-    model_dict.update(pretrained_dict)
-    model.load_state_dict(model_dict)
+    
+    if args.mode == 'single_head':
+        pretrained_dict = {k[6:]: v for k, v in pretrained_dict.items()
+                            if k[6:] in model_dict.keys()}
+        for k, _ in pretrained_dict.items():
+            logger.info(
+                '=> loading {} from pretrained model'.format(k))
+        model_dict.update(pretrained_dict)
+        model.load_state_dict(model_dict)
+    elif args.mode == 'two_head':
+        for k, v in pretrained_dict.items():
+            if k[6:16] == 'cls_head_1':
+                print('=> changing {} from pretrained model'.format(k))
+                new_k = k.replace("cls_head_1", "cls_head")
+                new_pretrained_dict[new_k[6:]] = v
+            elif k[6:16] == 'aux_head_1':
+                new_k = k.replace("aux_head_1", "aux_head")
+                new_pretrained_dict[new_k[6:]] = v
+            elif k[6:] in model_dict.keys():
+                new_pretrained_dict[k[6:]] = v
+        for k, _ in new_pretrained_dict.items():
+            print('=> loading {} from pretrained model'.format(k))
+        model_dict.update(new_pretrained_dict)
+        del pretrained_dict
+        model.load_state_dict(model_dict)
 
     gpus = list(config.GPUS)
     model = nn.DataParallel(model, device_ids=gpus).cuda()
@@ -131,7 +148,7 @@ def main():
         'pixel_acc' : pixel_acc, 
         'mean_acc' : mean_acc,
     }
-    torch.save(result, os.path.join(final_output_dir, "test_result.pt"))
+    torch.save(result, os.path.join(model_state_folder, "test_result.pt"))
     # elif 'test' in config.DATASET.TEST_SET:
     #     test(config, 
     #          test_dataset, 
