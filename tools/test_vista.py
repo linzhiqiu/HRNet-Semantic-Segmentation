@@ -132,6 +132,7 @@ def main():
         pin_memory=True)
     
     start = timeit.default_timer()
+    print(f"Saving result to {model_state_folder}")
     mean_IoU, IoU_array, pixel_acc, mean_acc = testval(config, 
                                                         test_dataset, 
                                                         testloader, 
