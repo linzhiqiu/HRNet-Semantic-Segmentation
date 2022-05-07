@@ -11,5 +11,5 @@ modes = [
 for mode in modes:
     print()
     print(f"Mode : {mode}")
-    result_file = "output/vista_v2_0/{}/test_result.pt"
+    result_file = f"output/vista_v2_0/{mode}/test_result.pt"
     print(torch.load(result_file))
