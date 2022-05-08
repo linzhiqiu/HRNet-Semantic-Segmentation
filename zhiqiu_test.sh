@@ -52,3 +52,5 @@ torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/train_vista.py --cfg e
 torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/finetune_vista_5000.py --cfg experiments/vista_v1_2_5000/2500_finetune.yaml --mode upper
 torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/finetune_vista_5000.py --cfg experiments/vista_v1_2_5000/2500_finetune.yaml --mode half_0
 torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/finetune_vista_5000.py --cfg experiments/vista_v1_2_5000/2500_finetune.yaml --mode half_1
+torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/train_vista_single_head.py --cfg experiments/vista_v1_2_5000/2500_finetune.yaml 
+torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/train_vista_two_head.py --cfg experiments/vista_v1_2_5000/2500_finetune.yaml 
