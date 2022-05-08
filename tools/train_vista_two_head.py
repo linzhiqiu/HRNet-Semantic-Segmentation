@@ -72,9 +72,9 @@ def main():
     logger, final_output_dir, tb_log_dir = create_logger(
         config, args.cfg, 'train')
     
-    prev_model_path = os.path.join("output/vista_v1_2/half_0", 'final_state.pth')
+    prev_model_path = os.path.join("output/vista_v1_2/2500_half_0", 'final_state.pth')
     # prev_model_path = os.path.join(final_output_dir, 'final_state.pth') #TODO:
-    final_output_dir = os.path.join(final_output_dir, 'two_head')
+    final_output_dir = os.path.join(final_output_dir, '2500_two_head')
 
     logger.info(pprint.pformat(args))
     logger.info(config)
@@ -109,8 +109,10 @@ def main():
         batch_size = config.TRAIN.BATCH_SIZE_PER_GPU * len(gpus)
     
 
-    list_path_t_0 = 'data/list/vista_v1_2_10000/train_half_0.lst'
-    list_path_t_1 = 'data/list/vista_v2_0_10000/train_half_1.lst'
+    # list_path_t_0 = 'data/list/vista_v1_2_10000/train_half_0.lst'
+    # list_path_t_1 = 'data/list/vista_v2_0_10000/train_half_1.lst'
+    list_path_t_0 = 'data/list/vista_v1_2_5000/train_half_0.lst'
+    list_path_t_1 = 'data/list/vista_v2_0_5000/train_half_1.lst'
     
     # prepare data
     crop_size = (config.TRAIN.IMAGE_SIZE[1], config.TRAIN.IMAGE_SIZE[0])
