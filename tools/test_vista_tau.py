@@ -113,6 +113,8 @@ def main():
         del pretrained_dict
         model.load_state_dict(model_dict)
 
+    norms = torch.linalg.norm(model.cls_head.weight.data, ord=2, dim=1).squeeze()
+    sorted_indices = [58,20,61,26,23,102,113,60,4,81,11,3,42,25,18,114,115,34,83,108,59,12,75,2,29,24,33,94,13,22,101,5,93,56,16,79,112,47,15,46,87,21,82,19,62,14,48,111,51,63,28,104,69,71,99,80,91,98,106,30,45,8,66,86,105,31,50,17,9,77,10,92,49,95,64,41,53,76,7,74,57,78,84,107,73,36,88,97,100,43,103,39,109,40,37,38,72,90,68,65,70,1,67,35,27,89,85,110,96,44,55,0,54,52,32,6]
     import pdb; pdb.set_trace()
     model.cls_head.weight.data = model.cls_head.weight.data / (torch.linalg.norm(model.cls_head.weight.data, ord=2, dim=1).unsqueeze(1).detach() ** args.tau)
     gpus = list(config.GPUS)
