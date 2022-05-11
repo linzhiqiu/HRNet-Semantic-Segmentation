@@ -32,6 +32,8 @@ from core.function import train_multi_head
 from utils.modelsummary import get_model_summary
 from utils.utils import create_logger, FullModelSingleHead
 
+SAVE_EPOCHS = [449, 499, 549, 599, 649, 699, 749]
+
 def parse_args():
     parser = argparse.ArgumentParser(description='Train segmentation network')
     
@@ -271,6 +273,11 @@ def main():
         if local_rank <= 0:
             print('Minutes for Training: %d' % np.int((-epoch_time+timeit.default_timer())/60))
         
+        if local_rank <= 0 and epoch in SAVE_EPOCHS:
+            torch.save(model.module.state_dict(),
+                    os.path.join(final_output_dir, f'epoch_{epoch}.pth'))
+            print("Saved to " + os.path.join(final_output_dir, f'epoch_{epoch}.pth'))
+            
         if local_rank <= 0:
             logger.info('=> saving checkpoint to {}'.format(
                 final_output_dir + 'checkpoint.pth.tar'))
