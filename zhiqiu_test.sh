@@ -100,3 +100,7 @@ CUDA_VISIBLE_DEVICES=2,1,0,3,4,5,6,7 python tools/test_vista.py --cfg experiment
 (TODO) python tools/test_vista_tau.py --tau 1.9 --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune/2500_finetune_on_half_1/final_state.pth
 (TODO) python tools/test_vista_tau.py --tau 1.9 --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune/2500_single_head/final_state.pth
 (TODO) python tools/test_vista_tau.py --mode two_head --tau 1.9 --cfg experiments/vista_v1_2_10000/finetune.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune/2500_two_head/final_state.pth
+
+# 2500 consistent single head
+(autobot-2-1) torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/train_vista_single_head.py --cfg experiments/vista_v1_2_5000/2500_finetune.yaml 
+(autobot-2-1) torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/train_vista_two_head.py --cfg experiments/vista_v1_2_5000/2500_finetune.yaml 

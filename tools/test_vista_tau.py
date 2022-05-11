@@ -113,6 +113,7 @@ def main():
         del pretrained_dict
         model.load_state_dict(model_dict)
 
+    import pdb; pdb.set_trace()
     model.cls_head.weight.data = model.cls_head.weight.data / (torch.linalg.norm(model.cls_head.weight.data, ord=2, dim=1).unsqueeze(1).detach() ** args.tau)
     gpus = list(config.GPUS)
     model = nn.DataParallel(model, device_ids=gpus).cuda()
