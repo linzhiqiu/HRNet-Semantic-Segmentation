@@ -83,7 +83,7 @@ class FullModelSingleHead(nn.Module):
     
     for i in range(len(outputs_0)):
       outputs_0[i] = outputs_0[i] - outputs_0[i].max(1)[0].unsqueeze(1)
-      outputs_0[i] = self.softmax(outputs_0[i])
+      outputs_0[i] = self.softmax(outputs_0[i] + 1e-20)
       outputs_0[i] = torch.log(torch.matmul(outputs_0[i].transpose(1,3), self.edge_matrix).transpose(1,3))
     outputs_1 = [self.log_softmax(outputs_1[i]) for i in range(len(outputs_1))]
     loss_0 = self.loss(outputs_0, labels_t_0)
