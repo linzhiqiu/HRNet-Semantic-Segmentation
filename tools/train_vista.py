@@ -33,6 +33,8 @@ from core.function import train, validate_vista
 from utils.modelsummary import get_model_summary
 from utils.utils import create_logger, FullModel
 
+SAVE_EPOCHS = [399, 499, 599, 699, 799, 899, 999, 1099, 1199, 1299]
+
 def parse_args():
     parser = argparse.ArgumentParser(description='Train segmentation network')
     
@@ -344,6 +346,11 @@ def main():
             # logging.info(msg)
             # logging.info(IoU_array)
 
+        if local_rank <= 0 and epoch in SAVE_EPOCHS:
+            torch.save(model.module.state_dict(),
+                    os.path.join(final_output_dir, f'epoch_{epoch}.pth'))
+            print("Saved to " + os.path.join(final_output_dir, f'epoch_{epoch}.pth'))
+            
         if distributed:
             torch.distributed.barrier()
     
