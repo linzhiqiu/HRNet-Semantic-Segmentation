@@ -32,8 +32,8 @@ from core.function import train_multi_head
 from utils.modelsummary import get_model_summary
 from utils.utils import create_logger, FullModelSingleHead
 
-# SAVE_EPOCHS = [449, 499, 549, 599, 649, 699, 749]
-SAVE_EPOCHS = [149, 199, 249, 299, 349]
+SAVE_EPOCHS = [449, 499, 549, 599, 649, 699, 749]
+# SAVE_EPOCHS = [149, 199, 249, 299, 349]
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Train segmentation network')
@@ -74,10 +74,10 @@ def main():
     logger, final_output_dir, tb_log_dir = create_logger(
         config, args.cfg, 'train')
     
-    # prev_model_path = os.path.join("output/vista_v1_2/2500_half_0", 'final_state.pth')
-    # final_output_dir = os.path.join(final_output_dir, '2500_single_head_consistent')
-    prev_model_path = os.path.join("output/vista_v1_2/half_0", 'final_state.pth')
-    final_output_dir = os.path.join(final_output_dir, '5000_single_head_consistent')
+    prev_model_path = os.path.join("output/vista_v1_2/2500_half_0", 'final_state.pth')
+    final_output_dir = os.path.join(final_output_dir, '2500_single_head_consistent')
+    # prev_model_path = os.path.join("output/vista_v1_2/half_0", 'final_state.pth')
+    # final_output_dir = os.path.join(final_output_dir, '5000_single_head_consistent')
 
     logger.info(pprint.pformat(args))
     logger.info(config)
@@ -114,10 +114,10 @@ def main():
 
     # list_path_t_0 = 'data/list/vista_v1_2_10000/train_half_0.lst'
     # list_path_t_1 = 'data/list/vista_v2_0_10000/train_half_1.lst'
-    # list_path_t_0 = 'data/list/vista_v1_2_5000/train_half_0_consistent.lst'
-    # list_path_t_1 = 'data/list/vista_v2_0_5000/train_half_1.lst'
-    list_path_t_0 = 'data/list/vista_v1_2_10000/train_half_0_consistent.lst'
-    list_path_t_1 = 'data/list/vista_v2_0_10000/train_half_1.lst'
+    list_path_t_0 = 'data/list/vista_v1_2_5000/train_half_0_consistent.lst'
+    list_path_t_1 = 'data/list/vista_v2_0_5000/train_half_1.lst'
+    # list_path_t_0 = 'data/list/vista_v1_2_10000/train_half_0_consistent.lst'
+    # list_path_t_1 = 'data/list/vista_v2_0_10000/train_half_1.lst'
     
     # prepare data
     crop_size = (config.TRAIN.IMAGE_SIZE[1], config.TRAIN.IMAGE_SIZE[0])

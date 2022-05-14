@@ -77,7 +77,7 @@ def main():
     mode = args.mode
     
     prev_model_path = os.path.join("output/vista_v1_2/2500_half_0_scratch", 'final_state.pth')
-    final_output_dir = os.path.join(final_output_dir, f'2500_finetune_on_{mode}')
+    final_output_dir = os.path.join(final_output_dir, f'2500_finetune_scratch_on_{mode}')
     
     logger.info(pprint.pformat(args))
     logger.info(config)

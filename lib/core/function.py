@@ -19,7 +19,7 @@ from torch.nn import functional as F
 from utils.utils import AverageMeter
 from utils.utils import get_confusion_matrix
 from utils.utils import adjust_learning_rate
-
+from PIL import Image
 import utils.distributed as dist
 
 
@@ -323,9 +323,96 @@ def validate_vista(config, loader, model, writer_dict=None, phase='valid'):
 #         if phase == 'valid':
 #             writer_dict['valid_global_steps'] = global_steps + 1
 #     return mean_IoU, IoU_array, pixel_acc, mean_acc
+def write_lst(file_name, lst):
+    with open(file_name, 'w+') as file:
+        for line in lst:
+            file.write(line + "\n")
+
+def save_self_train_pred(pred, label, pred_path, edge_matrix, strategy):
+    with torch.no_grad():
+        pred = pred.to(edge_matrix.device)
+        label = label.to(edge_matrix.device)
+        filter_mask = label == 255
+        if strategy == 'none':
+            pred_max = pred.argmax(dim=1)
+        elif strategy == 'filtering':
+            pred_max = pred.argmax(dim=1)
+            pred_one_hot = torch.nn.functional.one_hot(pred_max, num_classes=edge_matrix.shape[0])
+            pred_one_hot = pred_one_hot.float().matmul(edge_matrix.float())
+            pred_v1_max = pred_one_hot.argmax(3)
+            filter_mask = torch.logical_or(filter_mask, pred_v1_max != label)
+        elif strategy == 'conditioning':
+            pred = pred - pred.min()
+            label_mask = edge_matrix.T[label.long()].permute(0, 3, 1, 2)
+            pred = pred * label_mask
+            pred_max = pred.argmax(dim=1)
+        else:
+            raise NotImplementedError() 
+        pred_max[filter_mask] = 255
+        pred_numpy = pred_max.squeeze().cpu().numpy()
+        pred = pred.cpu()
+        label = label.cpu()
+        pred_max = pred_max.cpu()
+    im = Image.fromarray(pred_numpy.astype(np.uint8))
+    im.save(pred_path)
+
+def self_train_hard(config, test_dataset, testloader, model,
+                    save_for_self_train="", train_dir_path='training/images/', label_dir_path='training/v1.2/',
+                    root='/project_data/ramanan/zhiqiu/mapillary_vista/',
+                    edge_matrix=None, strategy='none'):
+    if len(save_for_self_train) > 0:
+        lst_save_path = f"{save_for_self_train}.lst"
+        if strategy == 'none':
+            pass
+        elif strategy == 'conditioning':
+            assert type(edge_matrix) != type(None)
+        elif strategy == 'filtering':
+            assert type(edge_matrix) != type(None)
+        else:
+            raise NotImplementedError()
+        print(f"Saving images at {root}/{label_dir_path}/{save_for_self_train}")
+        print(f"Lst saved at {lst_save_path}")
+        if not os.path.exists(os.path.join(root, label_dir_path, save_for_self_train)):
+            os.makedirs(os.path.join(root, label_dir_path, save_for_self_train))
+        lst = []
+    model.eval()
+    with torch.no_grad():
+        for index, batch in enumerate(tqdm(testloader)):
+            image, label, _, name, *border_padding = batch
+            size = label.size()
+            pred = test_dataset.multi_scale_inference(
+                config,
+                model,
+                image,
+                scales=config.TEST.SCALE_LIST,
+                flip=config.TEST.FLIP_TEST)
+            if len(border_padding) > 0:
+                border_padding = border_padding[0]
+                pred = pred[:, :, 0:pred.size(2) - border_padding[0], 0:pred.size(3) - border_padding[1]]
+
+            if pred.size()[-2] != size[-2] or pred.size()[-1] != size[-1]:
+                pred = F.interpolate(
+                    pred, size[-2:],
+                    mode='bilinear', align_corners=config.MODEL.ALIGN_CORNERS
+                )
+            if len(save_for_self_train) > 0:
+                train_path = os.path.join(train_dir_path, name[0]+".jpg")
+                pred_path = os.path.join(label_dir_path, save_for_self_train, name[0]+".png")
+                lst.append(f"{train_path} {pred_path}")
+                save_self_train_pred(
+                    pred,
+                    label,
+                    os.path.join(root, pred_path),
+                    edge_matrix,
+                    strategy
+                )
+
+    if len(save_for_self_train) > 0:
+        write_lst(lst_save_path, lst)
+        print(f"Lst saved at {lst_save_path}")
 
 def testval(config, test_dataset, testloader, model,
-            sv_dir='', sv_pred=False):
+            sv_dir='', sv_pred=False, ):
     model.eval()
     confusion_matrix = np.zeros(
         (config.DATASET.NUM_CLASSES, config.DATASET.NUM_CLASSES))
@@ -339,7 +426,6 @@ def testval(config, test_dataset, testloader, model,
                 image,
                 scales=config.TEST.SCALE_LIST,
                 flip=config.TEST.FLIP_TEST)
-
             if len(border_padding) > 0:
                 border_padding = border_padding[0]
                 pred = pred[:, :, 0:pred.size(2) - border_padding[0], 0:pred.size(3) - border_padding[1]]
@@ -349,7 +435,6 @@ def testval(config, test_dataset, testloader, model,
                     pred, size[-2:],
                     mode='bilinear', align_corners=config.MODEL.ALIGN_CORNERS
                 )
-
             confusion_matrix += get_confusion_matrix(
                 label,
                 pred,
@@ -371,16 +456,17 @@ def testval(config, test_dataset, testloader, model,
                 IoU_array = (tp / np.maximum(1.0, pos + res - tp))
                 mean_IoU = IoU_array.mean()
                 logging.info('mIoU: %.4f' % (mean_IoU))
-
+    
     pos = confusion_matrix.sum(1)
     res = confusion_matrix.sum(0)
     tp = np.diag(confusion_matrix)
-    pixel_acc = tp.sum()/pos.sum()
-    mean_acc = (tp/np.maximum(1.0, pos)).mean()
+    pixel_acc = tp.sum()/pos.sum() 
+    mean_pixel_acc = tp/np.maximum(1.0, pos)
+    mean_acc = mean_pixel_acc.mean()
     IoU_array = (tp / np.maximum(1.0, pos + res - tp))
     mean_IoU = IoU_array.mean()
 
-    return mean_IoU, IoU_array, pixel_acc, mean_acc
+    return mean_IoU, IoU_array, pixel_acc, mean_acc, pixel_acc
 
 
 def test(config, test_dataset, testloader, model,
