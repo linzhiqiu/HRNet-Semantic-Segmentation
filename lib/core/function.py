@@ -466,7 +466,7 @@ def testval(config, test_dataset, testloader, model,
     IoU_array = (tp / np.maximum(1.0, pos + res - tp))
     mean_IoU = IoU_array.mean()
 
-    return mean_IoU, IoU_array, pixel_acc, mean_acc, pixel_acc
+    return mean_IoU, IoU_array, pixel_acc, mean_acc, mean_pixel_acc
 
 
 def test(config, test_dataset, testloader, model,
