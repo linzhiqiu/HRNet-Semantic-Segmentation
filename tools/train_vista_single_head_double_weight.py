@@ -177,8 +177,10 @@ def main():
     else:
         weight_vec = torch.Tensor([1.0, 1.0, 2.0, 1.0, 1.0, 1.0, 2.0, 2.0, 2.0, 2.0, 2.0, 1.0, 1.0, 1.0, 1.0, 2.0, 1.0, 2.0, 1.0, 1.0, 2.0, 2.0, 1.0, 2.0, 2.0, 1.0, 1.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 1.0, 1.0, 2.0, 2.0, 2.0, 2.0, 2.0, 1.0, 1.0, 1.0, 1.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 1.0, 2.0, 1.0, 2.0, 2.0])
         print(f"Wieght vec has shape {weight_vec.shape}")
-        criterion = NLLLoss(ignore_label=config.TRAIN.IGNORE_LABEL,
-                            weight=weight_vec)
+        criterion_t_0 = NLLLoss(ignore_label=config.TRAIN.IGNORE_LABEL,
+                                weight=None)
+        criterion_t_1 = NLLLoss(ignore_label=config.TRAIN.IGNORE_LABEL,
+                                weight=weight_vec)
     # Load last final_state
     pretrained_dict = torch.load(prev_model_path, map_location={'cuda:0': 'cpu'})
     if 'state_dict' in pretrained_dict:
@@ -202,7 +204,7 @@ def main():
     model.load_state_dict(model_dict)
     if distributed:
         torch.distributed.barrier()
-    model = FullModelSingleHead(model, criterion)
+    model = FullModelSingleHead(model, criterion_t_0, criterion_t_1)
     if distributed:
         model = model.to(device)
         model = torch.nn.parallel.DistributedDataParallel(
