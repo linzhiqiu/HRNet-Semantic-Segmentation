@@ -510,6 +510,7 @@ def testval_self_train(config, testdataset, selftrainloader, testloader,
             im = Image.fromarray(label_st_converted.squeeze().astype(np.uint8))
             im.save(pred_path)
             label_st_ignore = label_st == config.TRAIN.IGNORE_LABEL
+            label_t[label_st_ignore] = 255
             label_st[label_st_ignore] = 0
             label_st = torch.nn.functional.one_hot(label_st.long(), num_classes=116).permute(0, 3, 1, 2)
             confusion_matrix += get_confusion_matrix(
