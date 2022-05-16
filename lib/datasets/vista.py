@@ -29,6 +29,7 @@ class Vista(BaseDataset):
                  scale_factor=16,
                  class_balancing=False,
                  eval_all=False, # whether or not to include void class(es)
+                 no_label_map=False,
                  mean=[0.485, 0.456, 0.406], 
                  std=[0.229, 0.224, 0.225]):
 
@@ -39,7 +40,7 @@ class Vista(BaseDataset):
         self.eval_all = eval_all
         self.multi_scale = multi_scale
         self.flip = flip
-        
+        self.no_label_map = no_label_map
         self.img_list = [line.strip().split() for line in open(list_path)]
 
         self.files = []
@@ -60,7 +61,9 @@ class Vista(BaseDataset):
         self.num_classes = 0
         self.label_mapping = {}
         for idx, l in enumerate(self.labels):
-            if l['evaluate'] or self.eval_all:
+            if no_label_map:
+                self.label_mapping[idx] = idx
+            elif l['evaluate'] or self.eval_all:
                 self.label_mapping[idx] = self.num_classes
                 self.num_classes += 1
             else:
@@ -101,7 +104,9 @@ class Vista(BaseDataset):
     
     def convert_label(self, label, inverse=False):
         temp = label.copy()  
-        if inverse:
+        if self.no_label_map:
+            return label
+        elif inverse:
             for v, k in self.label_mapping.items():
                 label[temp == k] = v
         else:
@@ -249,6 +254,7 @@ class Vista_V2_0(Vista):
                  scale_factor=16,
                  class_balancing=False,
                  eval_all=False,
+                 no_label_map=False,
                  mean=[0.485, 0.456, 0.406], 
                  std=[0.229, 0.224, 0.225]):
         self.version = 'v2.0'
@@ -263,5 +269,6 @@ class Vista_V2_0(Vista):
                                          scale_factor=scale_factor,
                                          class_balancing=class_balancing,
                                          eval_all=eval_all,
+                                         no_label_map=no_label_map,
                                          mean=mean, 
                                          std=std)

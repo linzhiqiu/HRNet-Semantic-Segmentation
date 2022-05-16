@@ -494,3 +494,53 @@ def test(config, test_dataset, testloader, model,
                 if not os.path.exists(sv_path):
                     os.mkdir(sv_path)
                 test_dataset.save_pred(pred, sv_path, name)
+                
+def testval_self_train(config, testdataset, selftrainloader, testloader,
+                       save_for_self_train="", label_dir_path='training/v1.2/',
+                    root='/project_data/ramanan/zhiqiu/mapillary_vista/'):
+    confusion_matrix = np.zeros(
+        (config.DATASET.NUM_CLASSES, config.DATASET.NUM_CLASSES))
+    with torch.no_grad():
+        for index, (batch_st, batch_t) in enumerate(tqdm(zip(selftrainloader, testloader))):
+            _, label_t, _, name, *border_padding = batch_t
+            _, label_st, _, _, *border_padding = batch_st
+            size = label_t.size()
+            pred_path = os.path.join(root, label_dir_path, save_for_self_train, name[0]+".png")
+            label_st_converted = testdataset.convert_label(label_st.clone().numpy(), inverse=True)
+            im = Image.fromarray(label_st_converted.squeeze().astype(np.uint8))
+            im.save(pred_path)
+            label_st_ignore = label_st == config.TRAIN.IGNORE_LABEL
+            label_st[label_st_ignore] = 0
+            label_st = torch.nn.functional.one_hot(label_st.long(), num_classes=116).permute(0, 3, 1, 2)
+            confusion_matrix += get_confusion_matrix(
+                label_t,
+                label_st,
+                size,
+                config.DATASET.NUM_CLASSES,
+                config.TRAIN.IGNORE_LABEL)
+
+            if index % 100 == 0:
+                logging.info('processing: %d images' % index)
+                pos = confusion_matrix.sum(1)
+                res = confusion_matrix.sum(0)
+                tp = np.diag(confusion_matrix)
+                IoU_array = (tp / np.maximum(1.0, pos + res - tp))
+                mean_IoU = IoU_array.mean()
+                pixel_acc = tp.sum()/pos.sum() 
+                mean_pixel_acc = tp/np.maximum(1.0, pos)
+                mean_acc = mean_pixel_acc.mean()
+                logging.info('mIoU: %.4f' % (mean_IoU))
+                logging.info('mean_acc: %.4f' % (mean_acc))
+                logging.info('pixel_acc: %.4f' % (pixel_acc))
+    
+    pos = confusion_matrix.sum(1)
+    res = confusion_matrix.sum(0)
+    tp = np.diag(confusion_matrix)
+    pixel_acc = tp.sum()/pos.sum() 
+    mean_pixel_acc = tp/np.maximum(1.0, pos)
+    mean_acc = mean_pixel_acc.mean()
+    IoU_array = (tp / np.maximum(1.0, pos + res - tp))
+    mean_IoU = IoU_array.mean()
+
+    return mean_IoU, IoU_array, pixel_acc, mean_acc, pixel_acc
+

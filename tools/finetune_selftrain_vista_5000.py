@@ -100,6 +100,8 @@ def main():
         )
     if local_rank <= 0 and not os.path.exists(final_output_dir):
         os.makedirs(final_output_dir)
+    elif local_rank <= 0:
+        print(f"Results will be saved at {final_output_dir}")
 
     # build model
     model = eval('models.'+config.MODEL.NAME +
@@ -126,6 +128,7 @@ def main():
                         class_balancing=None,
                         downsample_rate=config.TRAIN.DOWNSAMPLERATE,
                         scale_factor=config.TRAIN.SCALE_FACTOR)
+
     # print("load train_dataset")
     train_sampler = get_sampler(train_dataset)
     trainloader = torch.utils.data.DataLoader(
@@ -231,7 +234,7 @@ def main():
         if distributed:
             torch.distributed.barrier()
 
-    print(f"Results will be saved at {final_output_dir}")
+    
     start = timeit.default_timer()
     num_iters = end_epoch * epoch_iters
     for epoch in range(last_epoch, end_epoch):
