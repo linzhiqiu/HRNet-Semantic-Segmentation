@@ -12,12 +12,13 @@ DATASET:
   DATASET: vista_v2_0
   ROOT: /scratch/mapillary_vistas
   TEST_SET: 'data/list/vista_v2_0/test_mini.lst'
-  PRETRAINED: "/data3/zhiqiul/mapillary_weights/hrnetv2_w48_imagenet_pretrained.pth"
   NUM_CLASSES: 116
 MODEL:
   NAME: seg_hrnet_ocr
   NUM_OUTPUTS: 2
-  PRETRAINED: ""
+  PRETRAINED: "/data3/zhiqiul/mapillary_weights/hrnetv2_w48_imagenet_pretrained.pth"
+  # PRETRAINED: "/project_data/ramanan/zhiqiu/mapillary_weights/hrnetv2_w48_imagenet_pretrained.pth"
+  # PRETRAINED: ""
   EXTRA:
     FINAL_CONV_KERNEL: 1
     STAGE1:
