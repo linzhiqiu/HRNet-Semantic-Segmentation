@@ -11,6 +11,7 @@ import numpy as np
 from PIL import Image
 import json
 import torch
+import random
 from tqdm import tqdm
 from torch.nn import functional as F
 
@@ -272,3 +273,166 @@ class Vista_V2_0(Vista):
                                          no_label_map=no_label_map,
                                          mean=mean, 
                                          std=std)
+        
+class VistaBoth(BaseDataset):
+    def __init__(self,
+                 root,
+                 list_path_0=None,
+                 list_path_1=None,
+                 multi_scale=True, 
+                 flip=True, 
+                 ignore_label=-1, 
+                 base_size=2048, 
+                 crop_size=(1024, 1024), 
+                 downsample_rate=1,
+                 scale_factor=16,
+                 no_label_map=[False, False],
+                 mean=[0.485, 0.456, 0.406], 
+                 std=[0.229, 0.224, 0.225]):
+
+        super(VistaBoth, self).__init__(ignore_label, base_size,
+            crop_size, downsample_rate, scale_factor, mean, std)
+        self.root = root # root dir for downloaded data
+        self.list_path_0 = list_path_0
+        self.list_path_1 = list_path_1
+        self.no_label_map = no_label_map
+        self.multi_scale = multi_scale
+        self.flip = flip
+        self.img_list_0 = [line.strip().split() for line in open(list_path_0)]
+        self.img_list_1 = [line.strip().split() for line in open(list_path_1)]
+
+        self.files = []
+        for item_0, item_1 in zip(self.img_list_0, self.img_list_1):
+            image_path_0, label_path_0 = item_0
+            image_path_1, label_path_1 = item_1
+            assert image_path_0 == image_path_1
+            name = os.path.splitext(os.path.basename(label_path_0))[0]
+            self.files.append({
+                "img": os.path.join(self.root, image_path_0),
+                "labels": [os.path.join(self.root, label_path_0), os.path.join(self.root, label_path_1)],
+                "name": name,
+            })
+        
+        self.config_path = os.path.join(self.root, 'config_v2.0.json')
+        with open(self.config_path) as config_file:
+            self.config = json.load(config_file)
+        self.labels = self.config['labels']
+        
+        self.num_classes = 0
+        self.label_mapping = {}
+        for idx, l in enumerate(self.labels):
+            if l['evaluate']:
+                self.label_mapping[idx] = self.num_classes
+                self.num_classes += 1
+            else:
+                self.label_mapping[idx] = ignore_label # 255
+    
+    def convert_label(self, label, inverse=False):
+        temp = label.copy()  
+        if inverse:
+            for v, k in self.label_mapping.items():
+                label[temp == k] = v
+        else:
+            for k, v in self.label_mapping.items():
+                label[temp == k] = v
+        return label
+    
+    def rand_crop(self, image, label_0, label_1):
+        h, w = image.shape[:-1]
+        image = self.pad_image(image, h, w, self.crop_size,
+                               (0.0, 0.0, 0.0))
+        label_0 = self.pad_image(label_0, h, w, self.crop_size,
+                               (self.ignore_label,))
+        label_1 = self.pad_image(label_1, h, w, self.crop_size,
+                               (self.ignore_label,))
+
+        new_h, new_w = label_0.shape
+        x = random.randint(0, new_w - self.crop_size[1])
+        y = random.randint(0, new_h - self.crop_size[0])
+        image = image[y:y+self.crop_size[0], x:x+self.crop_size[1]]
+        label_0 = label_0[y:y+self.crop_size[0], x:x+self.crop_size[1]]
+        label_1 = label_1[y:y+self.crop_size[0], x:x+self.crop_size[1]]
+
+        return image, label_0, label_1
+    
+    def multi_scale_aug(self, image, label_0, label_1,
+                        rand_scale=1, rand_crop=True):
+        long_size = np.int(self.base_size * rand_scale + 0.5)
+        h, w = image.shape[:2]
+        if h > w:
+            new_h = long_size
+            new_w = np.int(w * long_size / h + 0.5)
+        else:
+            new_w = long_size
+            new_h = np.int(h * long_size / w + 0.5)
+
+        image = cv2.resize(image, (new_w, new_h),
+                           interpolation=cv2.INTER_LINEAR)
+        label_0 = cv2.resize(label_0, (new_w, new_h),
+                            interpolation=cv2.INTER_NEAREST)
+        label_1 = cv2.resize(label_1, (new_w, new_h),
+                            interpolation=cv2.INTER_NEAREST)
+
+        if rand_crop:
+            image, label_0, label_1 = self.rand_crop(image, label_0, label_1)
+
+        return image, label_0, label_1
+
+    
+    def gen_sample(self, image, label_0, label_1,
+                   multi_scale=True, is_flip=True):
+        if multi_scale:
+            rand_scale = 0.5 + random.randint(0, self.scale_factor) / 10.0
+            image, label_0, label_1 = self.multi_scale_aug(image, label_0, label_1,
+                                                rand_scale=rand_scale)
+
+        # image = self.random_brightness(image)
+        image = self.input_transform(image)
+        label_0 = self.label_transform(label_0)
+        label_1 = self.label_transform(label_1)
+        image = image.transpose((2, 0, 1))
+
+        if is_flip:
+            flip = np.random.choice(2) * 2 - 1
+            image = image[:, :, ::flip]
+            label_0 = label_0[:, ::flip]
+            label_1 = label_1[:, ::flip]
+
+        if self.downsample_rate != 1:
+            label_0 = cv2.resize(
+                label_0,
+                None,
+                fx=self.downsample_rate,
+                fy=self.downsample_rate,
+                interpolation=cv2.INTER_NEAREST
+            )
+            label_1 = cv2.resize(
+                label_1,
+                None,
+                fx=self.downsample_rate,
+                fy=self.downsample_rate,
+                interpolation=cv2.INTER_NEAREST
+            )
+
+        return image, label_0, label_1
+
+    def __getitem__(self, index):
+        item = self.files[index]
+        name = item["name"]
+        image = cv2.imread(item["img"],
+                           cv2.IMREAD_COLOR)
+        size = image.shape
+
+        label_path_0, label_path_1 = item['labels']
+        label_0 = np.array(Image.open(label_path_0))
+        label_1 = np.array(Image.open(label_path_1))
+        
+        if not self.no_label_map[0]:
+            label_0 = self.convert_label(label_0)
+        if not self.no_label_map[1]:
+            label_1 = self.convert_label(label_1)
+
+        image, label_0, label_1 = self.gen_sample(image, label_0, label_1, 
+                            self.multi_scale, self.flip)
+
+        return image.copy(), label_0.copy(), label_1.copy(), np.array(size), name

@@ -3,7 +3,6 @@
 # Licensed under the MIT License.
 # Written by Zhiqiu Lin
 # ------------------------------------------------------------------------------
-# torchrun --standalone --nnodes=1 --nproc_per_node=4 tools/train_vista_two_head.py --cfg experiments/vista_v1_2/v1_2_2090.yaml
 import argparse
 import os
 import pprint
@@ -22,19 +21,17 @@ import torch.nn as nn
 import torch.backends.cudnn as cudnn
 import torch.optim
 from tensorboardX import SummaryWriter
-
 import _init_paths
 import models
 import datasets
 from config import config
 from config import update_config
-from core.criterion import CrossEntropy, OhemCrossEntropy
-from core.function import train_multi_head
+from core.criterion import CrossEntropy, NLLLoss
+from core.function import train_all
 from utils.modelsummary import get_model_summary
-from utils.utils import create_logger, FullModelTwoHead
+from utils.utils import create_logger, MyModel
 
-SAVE_EPOCHS = [449, 499, 549, 599, 649, 699, 749]
-# SAVE_EPOCHS = [149, 199, 249, 299, 349]
+SAVE_EPOCHS = [649, 699, 749, 790]
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Train segmentation network')
@@ -44,11 +41,17 @@ def parse_args():
                         required=True,
                         type=str)
     parser.add_argument('--seed', type=int, default=304)
-    parser.add_argument("--local_rank", type=int, default=-1)       
+    parser.add_argument("--local_rank", type=int, default=-1)  
+    # parser.add_argument("--mode", type=str, default='half_1', choices=['half_0', 'half_1', 'upper'])       
     parser.add_argument('opts',
                         help="Modify config options using the command-line",
                         default=None,
                         nargs=argparse.REMAINDER)
+    parser.add_argument("--strategy", type=str, default='none', choices=['none', 'naive', 'filtering', 'conditioning']) 
+    parser.add_argument("--samples", type=int, default=2500, choices=[2500, 5000]) 
+    parser.add_argument("--loss", type=str, default='joint', choices=['joint', 'lpl']) 
+    parser.add_argument("--double_weight", type=bool, default=False) 
+
 
     args = parser.parse_args()
     update_config(config, args)
@@ -75,12 +78,13 @@ def main():
     logger, final_output_dir, tb_log_dir = create_logger(
         config, args.cfg, 'train')
     
-    prev_model_path = os.path.join("output/vista_v1_2/2500_half_0", 'final_state.pth')
-    # prev_model_path = os.path.join("output/vista_v1_2/half_0", 'final_state.pth')
-    # final_output_dir = os.path.join(final_output_dir, '2500_two_head')
-    final_output_dir = os.path.join(final_output_dir, '2500_two_head_consistent_no_avg')
-    # final_output_dir = os.path.join(final_output_dir, '5000_two_head_consistent')
-
+    if args.samples == 2500:
+        prev_model_path = os.path.join("output/vista_v1_2/2500_half_0", 'final_state.pth')
+        final_output_dir = os.path.join(final_output_dir, f'2500_selftrain_{args.strategy}_loss_{args.loss}_double_{args.double_weight}')
+    elif args.sample == 5000:
+        prev_model_path = os.path.join("output/vista_v1_2/half_0", 'final_state.pth')
+        final_output_dir = os.path.join(final_output_dir, f'selftrain_{args.strategy}_loss_{args.loss}_double_{args.double_weight}')
+    
     logger.info(pprint.pformat(args))
     logger.info(config)
 
@@ -103,107 +107,137 @@ def main():
         torch.distributed.init_process_group(
             backend="nccl", init_method="env://",
         )
+    if local_rank <= 0:
+        print(f"Results will be saved at {final_output_dir}")
+        if not os.path.exists(final_output_dir):
+            os.makedirs(final_output_dir)
 
     # build model
-    model = eval('models.'+config.MODEL.NAME +
+    if args.loss == 'joint':
+        model = eval('models.'+config.MODEL.NAME +
                  '.get_seg_model_two_head')(config)
+    else:
+        model = eval('models.'+config.MODEL.NAME +
+                    '.get_seg_model')(config)
     
     if distributed:
         batch_size = config.TRAIN.BATCH_SIZE_PER_GPU
     else:
         batch_size = config.TRAIN.BATCH_SIZE_PER_GPU * len(gpus)
-    
 
-    # list_path_t_0 = 'data/list/vista_v1_2_10000/train_half_0.lst'
-    # list_path_t_1 = 'data/list/vista_v2_0_10000/train_half_1.lst'
-    # list_path_t_0 = 'data/list/vista_v1_2_5000/train_half_0.lst'
-    # list_path_t_1 = 'data/list/vista_v2_0_5000/train_half_1.lst'
-    list_path_t_0 = 'data/list/vista_v1_2_5000/train_half_0_consistent.lst'
-    list_path_t_1 = 'data/list/vista_v2_0_5000/train_half_1.lst'
-    # list_path_t_0 = 'data/list/vista_v1_2_10000/train_half_0_consistent.lst'
-    # list_path_t_1 = 'data/list/vista_v2_0_10000/train_half_1.lst'
+    if args.strategy == 'naive':
+        selftrain_list_path = f'samples_{args.samples}_strategy_none.lst'
+    else:
+        selftrain_list_path = f'samples_{args.samples}_strategy_{args.strategy}.lst'
+    t_0_list_path = f"data/list/vista_v1_2_{args.samples*2}/train_half_0_consistent.lst"
+    
+    t_1_v1_list_path = f'data/list/vista_v1_2_{args.samples*2}/train_half_1.lst'
+    t_1_v2_list_path = f'data/list/vista_v2_0_{args.samples*2}/train_half_1.lst'
+
     
     # prepare data
     crop_size = (config.TRAIN.IMAGE_SIZE[1], config.TRAIN.IMAGE_SIZE[0])
-    train_dataset_t_0 = eval('datasets.'+"vista_v1_2")(
-                            root=config.DATASET.ROOT,
-                            list_path=list_path_t_0,
-                            multi_scale=config.TRAIN.MULTI_SCALE,
-                            flip=config.TRAIN.FLIP,
-                            ignore_label=config.TRAIN.IGNORE_LABEL,
-                            base_size=config.TRAIN.BASE_SIZE,
-                            crop_size=crop_size,
-                            class_balancing=None,
-                            downsample_rate=config.TRAIN.DOWNSAMPLERATE,
-                            scale_factor=config.TRAIN.SCALE_FACTOR)
-    train_dataset_t_1 = eval('datasets.'+"vista_v2_0")(
-                            root=config.DATASET.ROOT,
-                            list_path=list_path_t_1,
-                            multi_scale=config.TRAIN.MULTI_SCALE,
-                            flip=config.TRAIN.FLIP,
-                            ignore_label=config.TRAIN.IGNORE_LABEL,
-                            base_size=config.TRAIN.BASE_SIZE,
-                            crop_size=crop_size,
-                            class_balancing=None,
-                            downsample_rate=config.TRAIN.DOWNSAMPLERATE,
-                            scale_factor=config.TRAIN.SCALE_FACTOR)
+    t_0_dataset = eval('datasets.'+"vista_both")(
+                       root=config.DATASET.ROOT,
+                       list_path_0=selftrain_list_path,
+                       list_path_1=t_0_list_path,
+                       multi_scale=config.TRAIN.MULTI_SCALE,
+                       flip=config.TRAIN.FLIP,
+                       ignore_label=config.TRAIN.IGNORE_LABEL,
+                       base_size=config.TRAIN.BASE_SIZE,
+                       crop_size=crop_size,
+                       no_label_map=[False, True],
+                       downsample_rate=config.TRAIN.DOWNSAMPLERATE,
+                       scale_factor=config.TRAIN.SCALE_FACTOR)
+    
+    t_1_dataset = eval('datasets.'+"vista_both")(
+                       root=config.DATASET.ROOT,
+                       list_path_0=t_1_v1_list_path,
+                       list_path_1=t_1_v2_list_path,
+                       multi_scale=config.TRAIN.MULTI_SCALE,
+                       flip=config.TRAIN.FLIP,
+                       ignore_label=config.TRAIN.IGNORE_LABEL,
+                       base_size=config.TRAIN.BASE_SIZE,
+                       crop_size=crop_size,
+                       no_label_map=[False, False],
+                       downsample_rate=config.TRAIN.DOWNSAMPLERATE,
+                       scale_factor=config.TRAIN.SCALE_FACTOR)
+
+    
     # print("load train_dataset")
     assert batch_size % 2 == 0
-    train_sampler_t_0 = get_sampler(train_dataset_t_0)
+    train_sampler_t_0 = get_sampler(t_0_dataset)
     trainloader_t_0 = torch.utils.data.DataLoader(
-        train_dataset_t_0,
+        t_0_dataset,
         batch_size=int(batch_size / 2),
         shuffle=False,
         num_workers=int(config.WORKERS/2),
-        # num_workers=4,
         pin_memory=True,
         drop_last=True,
         sampler=train_sampler_t_0)
-
-    train_sampler_t_1 = get_sampler(train_dataset_t_1)
+    
+    train_sampler_t_1 = get_sampler(t_1_dataset)
     trainloader_t_1 = torch.utils.data.DataLoader(
-        train_dataset_t_1,
+        t_1_dataset,
         batch_size=int(batch_size / 2),
         shuffle=False,
         num_workers=int(config.WORKERS/2),
-        # num_workers=4,
         pin_memory=True,
         drop_last=True,
         sampler=train_sampler_t_1)
 
     # criterion
     if config.LOSS.USE_OHEM:
-        import pdb; pdb.set_trace() # NOT TESTED
-        criterion = OhemCrossEntropy(ignore_label=config.TRAIN.IGNORE_LABEL,
-                                        thres=config.LOSS.OHEMTHRES,
-                                        min_kept=config.LOSS.OHEMKEEP,
-                                        weight=train_dataset.class_weights)
+        import pdb; pdb.set_trace() # NOT IMPLEMENTED
+        # criterion = OhemCrossEntropy(ignore_label=config.TRAIN.IGNORE_LABEL,
+        #                                 thres=config.LOSS.OHEMTHRES,
+        #                                 min_kept=config.LOSS.OHEMKEEP,
+        #                                 weight=train_dataset.class_weights)
     else:
-        criterion_t_0 = CrossEntropy(ignore_label=config.TRAIN.IGNORE_LABEL,
-                                     weight=None)
-        criterion_t_1 = CrossEntropy(ignore_label=config.TRAIN.IGNORE_LABEL,
-                                     weight=None)
+        if args.double_weight:
+            weight_vec = torch.Tensor([1.0, 1.0, 2.0, 1.0, 1.0, 1.0, 2.0, 2.0, 2.0, 2.0, 2.0, 1.0, 1.0, 1.0, 1.0, 2.0, 1.0, 2.0, 1.0, 1.0, 2.0, 2.0, 1.0, 2.0, 2.0, 1.0, 1.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 1.0, 1.0, 2.0, 2.0, 2.0, 2.0, 2.0, 1.0, 1.0, 1.0, 1.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 1.0, 2.0, 1.0, 2.0, 2.0])
+            print(f"Wieght vec has shape {weight_vec.shape}")
+        else:
+            weight_vec = None
+        
+        criterion_t_0_ce = CrossEntropy(ignore_label=config.TRAIN.IGNORE_LABEL,
+                                   weight=None)
+        criterion_t_1_ce = CrossEntropy(ignore_label=config.TRAIN.IGNORE_LABEL,
+                                   weight=weight_vec)
+        criterion_t_0_nll = NLLLoss(ignore_label=config.TRAIN.IGNORE_LABEL,
+                                   weight=None)
+    
     # Load last final_state
     pretrained_dict = torch.load(prev_model_path, map_location={'cuda:0': 'cpu'})
     if 'state_dict' in pretrained_dict:
         pretrained_dict = pretrained_dict['state_dict']
     new_pretrained_dict = {}
     model_dict = model.state_dict()
-    for k, v in pretrained_dict.items():
-        if k[6:14] == 'cls_head':
-            if local_rank <= 0:
-                logger.info(
-                    '=> changing {} from pretrained model'.format(k))
-            new_k = k.replace("cls_head", "cls_head_0")
-            new_pretrained_dict[new_k[6:]] = v
-        elif k[6:14] == 'aux_head':
-            new_k = k.replace("aux_head", "aux_head_0")
-            if local_rank <= 0:
-                logger.info(
-                    '=> changing {} from pretrained model'.format(k))
-            new_pretrained_dict[new_k[6:]] = v
-        elif k[6:] in model_dict.keys():
-            new_pretrained_dict[k[6:]] = v
+    if args.loss == 'joint':
+        for k, v in pretrained_dict.items():
+            if k[6:14] == 'cls_head':
+                if local_rank <= 0:
+                    logger.info(
+                        '=> changing {} from pretrained model'.format(k))
+                new_k = k.replace("cls_head", "cls_head_0")
+                new_pretrained_dict[new_k[6:]] = v
+            elif k[6:14] == 'aux_head':
+                new_k = k.replace("aux_head", "aux_head_0")
+                if local_rank <= 0:
+                    logger.info(
+                        '=> changing {} from pretrained model'.format(k))
+                new_pretrained_dict[new_k[6:]] = v
+            elif k[6:] in model_dict.keys():
+                new_pretrained_dict[k[6:]] = v
+    else:
+        for k, v in pretrained_dict.items():
+            if k[6:14] in ['cls_head' ,'aux_head']:
+                if local_rank <= 0:
+                    logger.info(
+                        '=> skipping {} from pretrained model'.format(k))
+                continue
+            if k[6:] in model_dict.keys():
+                new_pretrained_dict[k[6:]] = v
     for k, _ in new_pretrained_dict.items():
         if local_rank <= 0:
             logger.info(
@@ -213,12 +247,16 @@ def main():
     model.load_state_dict(model_dict)
     if distributed:
         torch.distributed.barrier()
-    model = FullModelTwoHead(model, criterion_t_0, criterion_t_1)
+        
+    model = MyModel(model, args.loss, args.strategy,
+                    criterion_t_0_nll,
+                    criterion_t_0_ce,
+                    criterion_t_1_ce)
     if distributed:
         model = model.to(device)
         model = torch.nn.parallel.DistributedDataParallel(
             model,
-            find_unused_parameters=True,
+            find_unused_parameters=args.loss == 'joint',
             device_ids=[local_rank],
             output_device=local_rank
         )
@@ -246,7 +284,7 @@ def main():
             params = [{'params': list(params_dict.values()), 'lr': config.TRAIN.LR}]
 
         optimizer = torch.optim.SGD(params,
-                                lr=config.TRAIN.LR, #TODO: Tune it
+                                lr=config.TRAIN.LR,
                                 momentum=config.TRAIN.MOMENTUM,
                                 weight_decay=config.TRAIN.WD,
                                 nesterov=config.TRAIN.NESTEROV,
@@ -254,7 +292,7 @@ def main():
     else:
         raise ValueError('Only Support SGD optimizer')
 
-    epoch_iters = int(train_dataset_t_1.__len__() * 2 / config.TRAIN.BATCH_SIZE_PER_GPU / len(gpus))
+    epoch_iters = int(t_0_dataset.__len__() / config.TRAIN.BATCH_SIZE_PER_GPU / len(gpus))
     
     
     last_epoch = 0
@@ -273,8 +311,9 @@ def main():
         if distributed:
             torch.distributed.barrier()
 
+    
     start = timeit.default_timer()
-    end_epoch = int(config.TRAIN.END_EPOCH / 2) # TODO: Make sure this is correct
+    end_epoch = int(config.TRAIN.END_EPOCH / 2)
     num_iters = end_epoch * epoch_iters
     for epoch in range(last_epoch, end_epoch):
         current_trainloader_t_0 = trainloader_t_0
@@ -285,7 +324,7 @@ def main():
             current_trainloader_t_1.sampler.set_epoch(epoch)
 
         epoch_time = timeit.default_timer()
-        train_multi_head(config, epoch, end_epoch, 
+        train_all(config, epoch, end_epoch, 
                 epoch_iters, config.TRAIN.LR, num_iters,
                 trainloader_t_0, trainloader_t_1, optimizer, model, writer_dict)
         if local_rank <= 0:

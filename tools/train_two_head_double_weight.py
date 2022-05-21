@@ -210,6 +210,7 @@ def main():
     model.load_state_dict(model_dict)
     if distributed:
         torch.distributed.barrier()
+    
     model = FullModelTwoHead(model, criterion_t_0, criterion_t_1)
     if distributed:
         model = model.to(device)

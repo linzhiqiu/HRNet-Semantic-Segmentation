@@ -11,7 +11,7 @@ PRINT_FREQ: 10
 DATASET:
   DATASET: vista_v2_0
   ROOT: /scratch/mapillary_vistas
-  TEST_SET: 'data/list/vista_v2_0/test_mini.lst'
+  TEST_SET: 'data/list/vista_v2_0/test_minimal.lst'
   NUM_CLASSES: 116
 MODEL:
   NAME: seg_hrnet_ocr

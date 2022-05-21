@@ -59,7 +59,7 @@ class FullModelTwoHead(nn.Module):
     #     print(f"outputs_1 has shape at idx {i} being {outputs_1[i].shape}")
     loss_0 = self.loss_0(outputs_0, labels_t_0)
     loss_1 = self.loss_1(outputs_1, labels_t_1)
-    loss = (loss_0 + loss_1) / 2.
+    loss = loss_0 + loss_1
     return torch.unsqueeze(loss,0), outputs_0, outputs_1
 
 class FullModelSingleHead(nn.Module):
@@ -92,6 +92,63 @@ class FullModelSingleHead(nn.Module):
     loss_1 = self.loss_1(outputs_1, labels_t_1)
     loss = (loss_0 + loss_1) / 2.
     return torch.unsqueeze(loss,0), outputs_0, outputs_1
+
+
+class MyModel(nn.Module):
+  def __init__(self, model, loss, strategy, loss_0_nll, loss_0_ce, loss_1_ce, edge_matrix_path="./edge_matrix_116.pt"):
+    super(MyModel, self).__init__()
+    self.use_two_head = loss == 'joint' # joint, lpl
+    self.use_ssl = strategy != 'none' # strategy can be none, naive, filtering, conditioning
+    
+    self.model = model
+    self.loss_0_nll = loss_0_nll 
+    self.loss_0_ce = loss_0_ce 
+    self.loss_1_ce = loss_1_ce 
+    self.edge_matrix = torch.load(edge_matrix_path).float().cuda()
+    self.log_softmax = torch.nn.LogSoftmax(dim=1)
+    self.softmax = torch.nn.Softmax(dim=1)
+
+  def forward(self, inputs_t_0, inputs_t_1,
+              labels_t_0_selftrain,
+              labels_t_0_v1,
+              labels_t_1_v1,
+              labels_t_1_v2):
+    # First compute labeled loss
+    if self.use_two_head:
+      outputs_t_1_v2 = self.model(inputs_t_1, time=1)
+      outputs_t_1_v1 = self.model(inputs_t_1, time=0)
+    #   outputs_t_0_v2 = self.model(inputs_t_0, time=1)
+      outputs_t_0_v1 = self.model(inputs_t_0, time=0)
+    else:
+      outputs_t_1_v2 = self.model(inputs_t_1)
+      outputs_t_1_v1 = outputs_t_1_v2
+      outputs_t_0_v1 = self.model(inputs_t_0)
+    #   outputs_t_0_v2 = outputs_t_0_v1
+
+    labeled_loss = self.loss_1_ce(outputs_t_1_v2, labels_t_1_v2)
+    
+    outputs_v1 = [torch.cat([outputs_t_0_v1[i], outputs_t_1_v1[i]]) for i in range(len(outputs_t_0_v1))]
+    
+    labels_v1 = torch.cat([labels_t_0_v1, labels_t_1_v1])
+    if self.use_two_head:
+      coarse_loss = self.loss_0_ce(outputs_v1, labels_v1)
+    else:
+      for i in range(len(outputs_v1)):
+        outputs_v1[i] = outputs_v1[i] - outputs_v1[i].max(1)[0].unsqueeze(1)
+        outputs_v1[i] = self.softmax(outputs_v1[i] + 1e-20)
+        outputs_v1[i] = torch.log(torch.matmul(outputs_v1[i].transpose(1,3), self.edge_matrix).transpose(1,3))
+        coarse_loss = self.loss_0_nll(outputs_v1, labels_v1)
+    
+    if self.use_ssl:
+      if self.use_two_head:
+        outputs_t_0_v2 = self.model(inputs_t_0, time=1)
+      else:
+        outputs_t_0_v2 = outputs_t_0_v1
+      ssl_loss = self.loss_1_ce(outputs_t_0_v2, labels_t_0_selftrain)
+    else:
+      ssl_loss = 0.
+    loss = labeled_loss + coarse_loss + ssl_loss
+    return torch.unsqueeze(loss,0)
 
 
 class AverageMeter(object):

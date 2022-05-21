@@ -75,7 +75,7 @@ torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/train_vista_two_head.p
 (autobot-0-25) CUDA_VISIBLE_DEVICES=1,0,2,3,4,5,6,7 python tools/test_vista.py --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune/2500_finetune_on_half_1/final_state.pth
 
 (trinity-2-9-vnice) CUDA_VISIBLE_DEVICES=6,1,2,3,4,5,0,7 python tools/test_vista.py --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune/2500_single_head/final_state.pth
-CUDA_VISIBLE_DEVICES=7,1,2,3,4,5,60 python tools/test_vista.py --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune/2500_finetune_on_half_0/final_state.pth
+CUDA_VISIBLE_DEVICES=2,1,0,3,4,5,6,7 python tools/test_vista.py --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune/2500_finetune_on_half_0/final_state.pth
 (trinity-2-9-vnice) CUDA_VISIBLE_DEVICES=7,1,2,3,4,5,6,0 python tools/test_vista.py --mode two_head --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune/2500_two_head/final_state.pth
 # CUDA_VISIBLE_DEVICES=4,1,2,3,0,5,6,7 python tools/test_vista.py --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/all/final_state.pth
 # CUDA_VISIBLE_DEVICES=5,1,2,3,4,0,6,7 python tools/test_vista.py --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/half_0/final_state.pth
@@ -118,8 +118,8 @@ CUDA_VISIBLE_DEVICES=3,1,2,0,4,5,6,7 python tools/self_train.py --cfg experiment
 CUDA_VISIBLE_DEVICES=4,1,2,3,0,5,6,7 python tools/self_train.py --cfg experiments/vista_v1_2_10000/finetune.yaml --samples 5000 --strategy filtering
 CUDA_VISIBLE_DEVICES=5,1,2,3,4,0,6,7 python tools/self_train.py --cfg experiments/vista_v1_2_10000/finetune.yaml --samples 5000 --strategy conditioning
 
-(rsync first?) torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/finetune_selftrain_vista_5000.py --cfg experiments/vista_v1_2_5000/2500_finetune.yaml --strategy conditioning
 (rsync first?) torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/finetune_selftrain_vista_5000.py --cfg experiments/vista_v1_2_5000/2500_finetune.yaml --strategy none
+(rsync first?) torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/finetune_selftrain_vista_5000.py --cfg experiments/vista_v1_2_5000/2500_finetune.yaml --strategy conditioning
 (rsync first?) torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/finetune_selftrain_vista_5000.py --cfg experiments/vista_v1_2_5000/2500_finetune.yaml --strategy filtering
 (rsync first?) torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/finetune_selftrain_vista_10000.py --cfg experiments/vista_v1_2_10000/finetune.yaml --strategy conditioning
 (rsync first?) torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/finetune_selftrain_vista_10000.py --cfg experiments/vista_v1_2_10000/finetune.yaml --strategy none
@@ -127,9 +127,9 @@ CUDA_VISIBLE_DEVICES=5,1,2,3,4,0,6,7 python tools/self_train.py --cfg experiment
 
 (running) python tools/test_vista.py --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune/2500_selftrain_conditioning/final_state.pth
 CUDA_VISIBLE_DEVICES=6,1,2,3,4,5,0,7 python tools/test_vista.py --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune/2500_selftrain_none/final_state.pth
-CUDA_VISIBLE_DEVICES=6,1,2,3,4,5,0,7 python tools/test_vista.py --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune/2500_selftrain_filtering/final_state.pth
+CUDA_VISIBLE_DEVICES=7,1,2,3,4,5,6,0 python tools/test_vista.py --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune/2500_selftrain_filtering/final_state.pth
 
-  # sanity checking the pseudolabel quality
+  # sanity checking the pseudolabel quality + fixing the labels
   python tools/self_train_test.py --cfg experiments/vista_v1_2_10000/finetune.yaml --samples 5000 --strategy none
   python tools/self_train_test.py --cfg experiments/vista_v1_2_10000/finetune.yaml --samples 5000 --strategy filtering
   python tools/self_train_test.py --cfg experiments/vista_v1_2_10000/finetune.yaml --samples 5000 --strategy conditioning
@@ -158,8 +158,8 @@ torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/train_vista_single_hea
 torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/train_two_head_scratch.py --cfg experiments/vista_v1_2_5000/2500_finetune_scratch.yaml 
 
 
-(running) CUDA_VISIBLE_DEVICES=2,1,0,3,4,5,6,7 python tools/test_vista.py --cfg experiments/vista_v1_2_5000/2500_finetune_scratch.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune_scratch/2500_finetune_scratch_on_upper/final_state.pth
-(running) CUDA_VISIBLE_DEVICES=1,0,2,3,4,5,6,7 python tools/test_vista.py --cfg experiments/vista_v1_2_5000/2500_finetune_scratch.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune_scratch/2500_finetune_scratch_on_half_1/final_state.pth
+(running) CUDA_VISIBLE_DEVICES=3,1,2,0,4,5,6,7 python tools/test_vista.py --cfg experiments/vista_v1_2_5000/2500_finetune_scratch.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune_scratch/2500_finetune_scratch_on_upper/final_state.pth
+(running) CUDA_VISIBLE_DEVICES=4,1,2,3,0,5,6,7 python tools/test_vista.py --cfg experiments/vista_v1_2_5000/2500_finetune_scratch.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune_scratch/2500_finetune_scratch_on_half_1/final_state.pth
 python tools/test_vista.py --cfg experiments/vista_v1_2_5000/2500_finetune_scratch.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune_scratch/2500_single_head_scratch/final_state.pth
 python tools/test_vista.py --cfg experiments/vista_v1_2_5000/2500_finetune_scratch.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune_scratch/2500_finetune_scratch_on_half_0/final_state.pth
 python tools/test_vista.py --mode two_head --cfg experiments/vista_v1_2_5000/2500_finetune_scratch.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune_scratch/2500_two_head_scratch/final_state.pth
@@ -174,3 +174,26 @@ python tools/test_vista.py --mode two_head --cfg experiments/vista_v1_2_5000/250
 # double weight + consistent
 (trinity-2-1) torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/train_vista_single_head_double_weight.py --cfg experiments/vista_v1_2_5000/2500_finetune.yaml 
 () torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/train_two_head_double_weight.py --cfg experiments/vista_v1_2_5000/2500_finetune.yaml 
+
+python tools/test_vista.py --mode two_head --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune/2500_two_head_double_weight/final_state.pth
+CUDA_VISIBLE_DEVICES=1,0,2,3,4,5,6,7 python tools/test_vista.py --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune/2500_single_head_double_weight/final_state.pth
+
+
+# combining all and fix single/two head loss (include label set + remove average)
+torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/finetune_vista_final.py --strategy none --samples 2500 --loss joint --cfg experiments/vista_v1_2_5000/2500_finetune.yaml 
+torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/finetune_vista_final.py --strategy naive --samples 2500 --loss joint --cfg experiments/vista_v1_2_5000/2500_finetune.yaml 
+torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/finetune_vista_final.py --strategy filtering --samples 2500 --loss joint --cfg experiments/vista_v1_2_5000/2500_finetune.yaml 
+torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/finetune_vista_final.py --strategy conditioning --samples 2500 --loss joint --cfg experiments/vista_v1_2_5000/2500_finetune.yaml 
+(running) torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/finetune_vista_final.py --strategy none --samples 2500 --loss lpl --cfg experiments/vista_v1_2_5000/2500_finetune.yaml 
+torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/finetune_vista_final.py --strategy naive --samples 2500 --loss lpl --cfg experiments/vista_v1_2_5000/2500_finetune.yaml 
+(running) torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/finetune_vista_final.py --strategy filtering --samples 2500 --loss lpl --cfg experiments/vista_v1_2_5000/2500_finetune.yaml 
+(running) torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/finetune_vista_final.py --strategy conditioning --samples 2500 --loss lpl --cfg experiments/vista_v1_2_5000/2500_finetune.yaml 
+
+python tools/test_vista.py --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune/2500_selftrain_conditioning_loss_lpl_double_False/final_state.pth
+python tools/test_vista.py --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune/2500_selftrain_filtering_loss_lpl_double_False/final_state.pth
+python tools/test_vista.py --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune/2500_selftrain_none_loss_lpl_double_False/final_state.pth
+python tools/test_vista.py --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune/2500_selftrain_naive_loss_lpl_double_False/final_state.pth
+
+
+# testing for no avg
+torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/train_vista_two_head.py --cfg experiments/vista_v1_2_5000/2500_finetune.yaml 

@@ -15,3 +15,4 @@ from .ade20k import ADE20K as ade20k
 from .cocostuff import COCOStuff as cocostuff
 from .vista import Vista_V1_2 as vista_v1_2
 from .vista import Vista_V2_0 as vista_v2_0
+from .vista import VistaBoth as vista_both
