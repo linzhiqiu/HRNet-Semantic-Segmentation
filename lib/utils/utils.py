@@ -139,21 +139,24 @@ class MyModel(nn.Module):
       coarse_loss = self.loss_0_nll(outputs_v1, labels_v1)
     
     if self.use_ssl:
-      loss = labeled_loss + coarse_loss
-      loss.backward()
-      labels_t_0_v1.cpu()
-      labels_t_1_v1.cpu()
-      labels_t_1_v2.cpu()
-      inputs_t_0.cpu()
-      inputs_t_1.cpu()
-      del outputs_t_0_v1
-      del outputs_t_1_v1
-      del outputs_v1
-      del outputs_t_1_v2
-      torch.cuda.empty_cache()
-      _, outputs_t_0_v2 = self.model(inputs_t_0, return_both=True)
-      ssl_loss = self.loss_1_ce(outputs_t_0_v2, labels_t_0_selftrain)
-      return torch.unsqueeze(ssl_loss,0)
+      if self.use_two_head:
+        loss = labeled_loss + coarse_loss
+        loss.backward()
+        labels_t_0_v1.cpu()
+        labels_t_1_v1.cpu()
+        labels_t_1_v2.cpu()
+        inputs_t_0.cpu()
+        inputs_t_1.cpu()
+        del outputs_t_0_v1
+        del outputs_t_1_v1
+        del outputs_v1
+        del outputs_t_1_v2
+        torch.cuda.empty_cache()
+        _, outputs_t_0_v2 = self.model(inputs_t_0, return_both=True)
+        ssl_loss = self.loss_1_ce(outputs_t_0_v2, labels_t_0_selftrain)
+        return torch.unsqueeze(ssl_loss,0)
+      else:
+        ssl_loss = self.loss_1_ce(outputs_t_0_v2, labels_t_0_selftrain)
     #   for i in range(len(outputs_v1)):
     #     outputs_t_0_v1[i].cpu()
     #     outputs_t_1_v1[i].cpu()
