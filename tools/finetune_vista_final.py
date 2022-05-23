@@ -81,6 +81,8 @@ def main():
     if args.samples == 2500:
         prev_model_path = os.path.join("output/vista_v1_2/2500_half_0", 'final_state.pth')
         final_output_dir = os.path.join(final_output_dir, f'2500_selftrain_{args.strategy}_loss_{args.loss}_double_{args.double_weight}')
+        if args.loss == 'lpl':
+            final_output_dir = os.path.join(final_output_dir, f'2500_selftrain_{args.strategy}_loss_{args.loss}_corrected_double_{args.double_weight}')
     elif args.sample == 5000:
         prev_model_path = os.path.join("output/vista_v1_2/half_0", 'final_state.pth')
         final_output_dir = os.path.join(final_output_dir, f'selftrain_{args.strategy}_loss_{args.loss}_double_{args.double_weight}')
@@ -115,7 +117,7 @@ def main():
     # build model
     if args.loss == 'joint':
         model = eval('models.'+config.MODEL.NAME +
-                 '.get_seg_model_two_head')(config)
+                 '.get_seg_model_two_head_return_both')(config)
     else:
         model = eval('models.'+config.MODEL.NAME +
                     '.get_seg_model')(config)

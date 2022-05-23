@@ -133,6 +133,7 @@ def train_multi_head(config, epoch, num_epoch, epoch_iters, base_lr, num_iters,
         # for i in range(images_t_1.shape[0]):
         #     time_indices_1.append(counter)
         #     counter += 1
+        model.zero_grad()
         loss, _, _ = model(images_t_0, images_t_1, labels_t_0, labels_t_1)
         loss = loss.mean()
 
@@ -141,7 +142,6 @@ def train_multi_head(config, epoch, num_epoch, epoch_iters, base_lr, num_iters,
         else:
             reduced_loss = loss
 
-        model.zero_grad()
         loss.backward()
         optimizer.step()
 

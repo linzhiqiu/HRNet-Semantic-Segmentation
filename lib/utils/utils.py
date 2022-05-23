@@ -115,15 +115,14 @@ class MyModel(nn.Module):
               labels_t_1_v2):
     # First compute labeled loss
     if self.use_two_head:
-      outputs_t_1_v2 = self.model(inputs_t_1, time=1)
-      outputs_t_1_v1 = self.model(inputs_t_1, time=0)
-    #   outputs_t_0_v2 = self.model(inputs_t_0, time=1)
-      outputs_t_0_v1 = self.model(inputs_t_0, time=0)
+      outputs_t_1_v1, outputs_t_1_v2 = self.model(inputs_t_1)
+    #   outputs_t_0_v1, outputs_t_0_v2 = self.model(inputs_t_0, return_both=self.use_ssl)
+      outputs_t_0_v1, outputs_t_0_v2 = self.model(inputs_t_0, return_both=False)
     else:
       outputs_t_1_v2 = self.model(inputs_t_1)
       outputs_t_1_v1 = outputs_t_1_v2
       outputs_t_0_v1 = self.model(inputs_t_0)
-    #   outputs_t_0_v2 = outputs_t_0_v1
+      outputs_t_0_v2 = outputs_t_0_v1
 
     labeled_loss = self.loss_1_ce(outputs_t_1_v2, labels_t_1_v2)
     
@@ -135,16 +134,30 @@ class MyModel(nn.Module):
     else:
       for i in range(len(outputs_v1)):
         outputs_v1[i] = outputs_v1[i] - outputs_v1[i].max(1)[0].unsqueeze(1)
-        outputs_v1[i] = self.softmax(outputs_v1[i] + 1e-20)
-        outputs_v1[i] = torch.log(torch.matmul(outputs_v1[i].transpose(1,3), self.edge_matrix).transpose(1,3))
-        coarse_loss = self.loss_0_nll(outputs_v1, labels_v1)
+        outputs_v1[i] = self.softmax(outputs_v1[i])
+        outputs_v1[i] = torch.log(torch.matmul(outputs_v1[i].transpose(1,3), self.edge_matrix).transpose(1,3)  + 1e-20)
+      coarse_loss = self.loss_0_nll(outputs_v1, labels_v1)
     
     if self.use_ssl:
-      if self.use_two_head:
-        outputs_t_0_v2 = self.model(inputs_t_0, time=1)
-      else:
-        outputs_t_0_v2 = outputs_t_0_v1
+      loss = labeled_loss + coarse_loss
+      loss.backward()
+      labels_t_0_v1.cpu()
+      labels_t_1_v1.cpu()
+      labels_t_1_v2.cpu()
+      inputs_t_0.cpu()
+      inputs_t_1.cpu()
+      del outputs_t_0_v1
+      del outputs_t_1_v1
+      del outputs_v1
+      del outputs_t_1_v2
+      torch.cuda.empty_cache()
+      _, outputs_t_0_v2 = self.model(inputs_t_0, return_both=True)
       ssl_loss = self.loss_1_ce(outputs_t_0_v2, labels_t_0_selftrain)
+      return torch.unsqueeze(ssl_loss,0)
+    #   for i in range(len(outputs_v1)):
+    #     outputs_t_0_v1[i].cpu()
+    #     outputs_t_1_v1[i].cpu()
+    #     outputs_v1[i].cpu()
     else:
       ssl_loss = 0.
     loss = labeled_loss + coarse_loss + ssl_loss
