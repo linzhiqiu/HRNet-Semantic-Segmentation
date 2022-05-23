@@ -80,9 +80,10 @@ def main():
     
     if args.samples == 2500:
         prev_model_path = os.path.join("output/vista_v1_2/2500_half_0", 'final_state.pth')
-        final_output_dir = os.path.join(final_output_dir, f'2500_selftrain_{args.strategy}_loss_{args.loss}_double_{args.double_weight}')
         if args.loss == 'lpl':
             final_output_dir = os.path.join(final_output_dir, f'2500_selftrain_{args.strategy}_loss_{args.loss}_corrected_double_{args.double_weight}')
+        else:
+            final_output_dir = os.path.join(final_output_dir, f'2500_selftrain_{args.strategy}_loss_{args.loss}_double_{args.double_weight}')
     elif args.sample == 5000:
         prev_model_path = os.path.join("output/vista_v1_2/half_0", 'final_state.pth')
         final_output_dir = os.path.join(final_output_dir, f'selftrain_{args.strategy}_loss_{args.loss}_double_{args.double_weight}')
@@ -294,7 +295,7 @@ def main():
     else:
         raise ValueError('Only Support SGD optimizer')
 
-    epoch_iters = int(t_0_dataset.__len__() / config.TRAIN.BATCH_SIZE_PER_GPU / len(gpus))
+    epoch_iters = int(t_0_dataset.__len__() * 2 / config.TRAIN.BATCH_SIZE_PER_GPU / len(gpus))
     
     
     last_epoch = 0
