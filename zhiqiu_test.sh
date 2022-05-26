@@ -189,19 +189,56 @@ torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/finetune_vista_final.p
 (running) torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/finetune_vista_final.py --strategy filtering --samples 2500 --loss lpl --cfg experiments/vista_v1_2_5000/2500_finetune.yaml 
 (running) torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/finetune_vista_final.py --strategy conditioning --samples 2500 --loss lpl --cfg experiments/vista_v1_2_5000/2500_finetune.yaml 
 
-python tools/test_vista.py --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune/2500_selftrain_conditioning_loss_lpl_corrected_double_False/final_state.pth
-python tools/test_vista.py --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune/2500_selftrain_filtering_loss_lpl_corrected_double_False/final_state.pth
-python tools/test_vista.py --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune/2500_selftrain_none_loss_lpl_corrected_double_False/final_state.pth
+(MeanIU:  0.2948, Pixel_Acc:  0.8942,         Mean_Acc:  0.3743)python tools/test_vista.py --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune/2500_selftrain_conditioning_loss_lpl_corrected_double_False/final_state.pth
+(MeanIU:  0.2928, Pixel_Acc:  0.8952,         Mean_Acc:  0.3719)python tools/test_vista.py --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune/2500_selftrain_filtering_loss_lpl_corrected_double_False/final_state.pth
+(MeanIU:  0.2860, Pixel_Acc:  0.8954,         Mean_Acc:  0.3564)python tools/test_vista.py --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune/2500_selftrain_none_loss_lpl_corrected_double_False/final_state.pth
 python tools/test_vista.py --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune/2500_selftrain_naive_loss_lpl_corrected_double_False/final_state.pth
-python tools/test_vista.py --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune/2500_selftrain_conditioning_loss_joint_double_False/final_state.pth
-python tools/test_vista.py --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune/2500_selftrain_filtering_loss_joint_double_False/final_state.pth
-python tools/test_vista.py --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune/2500_selftrain_none_loss_joint_double_False/final_state.pth
-python tools/test_vista.py --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune/2500_selftrain_naive_loss_joint_double_False/final_state.pth
+python tools/test_vista.py --mode two_head --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune/2500_selftrain_conditioning_loss_joint_double_False/final_state.pth
+python tools/test_vista.py --mode two_head --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune/2500_selftrain_filtering_loss_joint_double_False/final_state.pth
+(MeanIU:  0.2397, Pixel_Acc:  0.8834,         Mean_Acc:  0.3078) python tools/test_vista.py --mode two_head --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune/2500_selftrain_none_loss_joint_double_False/final_state.pth
+python tools/test_vista.py --mode two_head --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune/2500_selftrain_naive_loss_joint_double_False/final_state.pth
 
+# minimal test
+CUDA_VISIBLE_DEVICES=5,1,2,3,4,0,6,7 python tools/test_vista.py --cfg experiments/vista_v1_2_5000/2500_finetune_minimal.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune/2500_selftrain_conditioning_loss_lpl_corrected_double_False/final_state.pth
+(MeanIU:  0.2808, Pixel_Acc:  0.8903, Mean_Acc:  0.3586) CUDA_VISIBLE_DEVICES=6,1,2,3,4,5,0,7 python tools/test_vista.py --cfg experiments/vista_v1_2_5000/2500_finetune_minimal.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune/2500_selftrain_filtering_loss_lpl_corrected_double_False/final_state.pth
+python tools/test_vista.py --cfg experiments/vista_v1_2_5000/2500_finetune_minimal.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune/2500_selftrain_none_loss_lpl_corrected_double_False/final_state.pth
+python tools/test_vista.py --cfg experiments/vista_v1_2_5000/2500_finetune_minimal.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune/2500_selftrain_naive_loss_lpl_corrected_double_False/final_state.pth
+python tools/test_vista.py --mode two_head --cfg experiments/vista_v1_2_5000/2500_finetune_minimal.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune/2500_selftrain_conditioning_loss_joint_double_False/final_state.pth
+python tools/test_vista.py --mode two_head --cfg experiments/vista_v1_2_5000/2500_finetune_minimal.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune/2500_selftrain_filtering_loss_joint_double_False/final_state.pth
+python tools/test_vista.py --mode two_head --cfg experiments/vista_v1_2_5000/2500_finetune_minimal.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune/2500_selftrain_none_loss_joint_double_False/final_state.pth
+python tools/test_vista.py --mode two_head --cfg experiments/vista_v1_2_5000/2500_finetune_minimal.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune/2500_selftrain_naive_loss_joint_double_False/final_state.pth
 
 # testing for no avg
 torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/train_vista_two_head.py --cfg experiments/vista_v1_2_5000/2500_finetune.yaml 
-python tools/test_vista.py --mode two_head --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune/2500_two_head_consistent_no_avg/final_state.pth
+(MeanIU:  0.3106, Pixel_Acc:  0.8991,  Mean_Acc:  0.3912) python tools/test_vista.py --mode two_head --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune/2500_two_head_consistent_no_avg/final_state.pth
+ # minimal: (MeanIU:  0.3033, Pixel_Acc:  0.8945, Mean_Acc:  0.3831) CUDA_VISIBLE_DEVICES=7,1,2,3,4,5,6,0 python tools/test_vista.py --mode two_head --cfg experiments/vista_v1_2_5000/2500_finetune_minimal.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune/2500_two_head_consistent_no_avg/final_state.pth
+
 
 # corrected the lpl loss (should have no difference)
 torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/finetune_vista_final.py --strategy conditioning --samples 2500 --loss lpl --cfg experiments/vista_v1_2_5000/2500_finetune.yaml
+
+# test t0 performance..
+MeanIU:  0.3701, Pixel_Acc:  0.8927,         Mean_Acc:  0.4479 python tools/test_vista.py --cfg experiments/vista_v1_2_5000/2500_half_0.yaml TEST.MODEL_FILE output/vista_v1_2/2500_half_0/final_state.pth
+
+MeanIU:  0.2822, Pixel_Acc:  0.8916,         Mean_Acc:  0.3499 python tools/test_vista.py --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/2500_half_0/final_state.pth
+MeanIU:  0.2928, Pixel_Acc:  0.8934,         Mean_Acc:  0.3695 python tools/test_vista.py --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/2500_half_1/final_state.pth
+MeanIU:  0.3071, Pixel_Acc:  0.8994,         Mean_Acc:  0.3859, python tools/test_vista.py --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/2500_all/final_state.pth
+
+# combining all and fix single/two head loss (include label set + remove average)
+torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/finetune_vista_final_new.py --strategy none --samples 2500 --loss joint --cfg experiments/vista_v1_2_5000/2500_finetune.yaml 
+torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/finetune_vista_final_new.py --strategy naive --samples 2500 --loss joint --cfg experiments/vista_v1_2_5000/2500_finetune.yaml 
+torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/finetune_vista_final_new.py --strategy filtering --samples 2500 --loss joint --cfg experiments/vista_v1_2_5000/2500_finetune.yaml 
+torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/finetune_vista_final_new.py --strategy conditioning --samples 2500 --loss joint --cfg experiments/vista_v1_2_5000/2500_finetune.yaml 
+torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/finetune_vista_final_new.py --strategy none --samples 2500 --loss lpl --cfg experiments/vista_v1_2_5000/2500_finetune.yaml 
+torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/finetune_vista_final_new.py --strategy naive --samples 2500 --loss lpl --cfg experiments/vista_v1_2_5000/2500_finetune.yaml 
+torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/finetune_vista_final_new.py --strategy filtering --samples 2500 --loss lpl --cfg experiments/vista_v1_2_5000/2500_finetune.yaml 
+torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/finetune_vista_final_new.py --strategy conditioning --samples 2500 --loss lpl --cfg experiments/vista_v1_2_5000/2500_finetune.yaml 
+
+python tools/test_vista.py --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune/2500_selftrain_conditioning_loss_lpl_double_False_new/final_state.pth
+python tools/test_vista.py --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune/2500_selftrain_filtering_loss_lpl_double_False_new/final_state.pth
+python tools/test_vista.py --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune/2500_selftrain_none_loss_lpl_double_False_new/final_state.pth
+python tools/test_vista.py --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune/2500_selftrain_naive_loss_lpl_double_False_new/final_state.pth
+python tools/test_vista.py --mode two_head --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune/2500_selftrain_conditioning_loss_joint_double_False_new/final_state.pth
+python tools/test_vista.py --mode two_head --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune/2500_selftrain_filtering_loss_joint_double_False_new/final_state.pth
+python tools/test_vista.py --mode two_head --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune/2500_selftrain_none_loss_joint_double_False_new/final_state.pth
+python tools/test_vista.py --mode two_head --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune/2500_selftrain_naive_loss_joint_double_False_new/final_state.pth

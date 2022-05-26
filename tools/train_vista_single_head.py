@@ -75,7 +75,7 @@ def main():
         config, args.cfg, 'train')
     
     prev_model_path = os.path.join("output/vista_v1_2/2500_half_0", 'final_state.pth')
-    final_output_dir = os.path.join(final_output_dir, '2500_single_head_consistent')
+    final_output_dir = os.path.join(final_output_dir, '2500_single_head_consistent_no_avg')
     # prev_model_path = os.path.join("output/vista_v1_2/half_0", 'final_state.pth')
     # final_output_dir = os.path.join(final_output_dir, '5000_single_head_consistent')
 

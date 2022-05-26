@@ -29,7 +29,7 @@ from config import update_config
 from core.criterion import CrossEntropy, NLLLoss
 from core.function import train_all
 from utils.modelsummary import get_model_summary
-from utils.utils import create_logger, MyModel
+from utils.utils import create_logger, MyModelNew
 
 SAVE_EPOCHS = [649, 699, 749, 790]
 
@@ -81,13 +81,13 @@ def main():
     if args.samples == 2500:
         prev_model_path = os.path.join("output/vista_v1_2/2500_half_0", 'final_state.pth')
         if args.loss == 'lpl':
-            final_output_dir = os.path.join(final_output_dir, f'2500_selftrain_{args.strategy}_loss_{args.loss}_corrected_double_{args.double_weight}')
+            final_output_dir = os.path.join(final_output_dir, f'2500_selftrain_{args.strategy}_loss_{args.loss}_double_{args.double_weight}_new')
             # final_output_dir = os.path.join(final_output_dir, f'2500_selftrain_{args.strategy}_loss_{args.loss}_double_{args.double_weight}')
         else:
-            final_output_dir = os.path.join(final_output_dir, f'2500_selftrain_{args.strategy}_loss_{args.loss}_double_{args.double_weight}')
+            final_output_dir = os.path.join(final_output_dir, f'2500_selftrain_{args.strategy}_loss_{args.loss}_double_{args.double_weight}_new')
     elif args.sample == 5000:
         prev_model_path = os.path.join("output/vista_v1_2/half_0", 'final_state.pth')
-        final_output_dir = os.path.join(final_output_dir, f'selftrain_{args.strategy}_loss_{args.loss}_double_{args.double_weight}')
+        final_output_dir = os.path.join(final_output_dir, f'selftrain_{args.strategy}_loss_{args.loss}_double_{args.double_weight}_new')
     
     logger.info(pprint.pformat(args))
     logger.info(config)
@@ -119,7 +119,7 @@ def main():
     # build model
     if args.loss == 'joint':
         model = eval('models.'+config.MODEL.NAME +
-                 '.get_seg_model_two_head_return_both')(config)
+                 '.get_seg_model_two_head')(config)
     else:
         model = eval('models.'+config.MODEL.NAME +
                     '.get_seg_model')(config)
@@ -252,7 +252,7 @@ def main():
     if distributed:
         torch.distributed.barrier()
         
-    model = MyModel(model, args.loss, args.strategy,
+    model = MyModelNew(model, args.loss, args.strategy,
                     criterion_t_0_nll,
                     criterion_t_0_ce,
                     criterion_t_1_ce)
