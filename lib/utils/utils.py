@@ -84,8 +84,8 @@ class FullModelSingleHead(nn.Module):
     
     for i in range(len(outputs_0)):
       outputs_0[i] = outputs_0[i] - outputs_0[i].max(1)[0].unsqueeze(1)
-      outputs_0[i] = self.softmax(outputs_0[i] + 1e-20)
-      outputs_0[i] = torch.log(torch.matmul(outputs_0[i].transpose(1,3), self.edge_matrix).transpose(1,3))
+      outputs_0[i] = self.softmax(outputs_0[i])
+      outputs_0[i] = torch.log(torch.matmul(outputs_0[i].transpose(1,3), self.edge_matrix).transpose(1,3)  + 1e-20)
     outputs_1 = [self.log_softmax(outputs_1[i]) for i in range(len(outputs_1))]
     loss_0 = self.loss_0(outputs_0, labels_t_0)
     # loss_0 = 0.
@@ -197,8 +197,8 @@ class MyModelNew(nn.Module):
     else:
       outputs_t_1_v2 = self.model(inputs_t_1)
       outputs_t_0_v1 = self.model(inputs_t_0)
-      outputs_t_0_v2 = outputs_t_0_v1
-
+      outputs_t_0_v2 = [outputs_t_0_v1[i].clone() for i in range(len(outputs_t_0_v1))]
+    
     labeled_loss = self.loss_1_ce(outputs_t_1_v2, labels_t_1_v2)
     
     if self.use_two_head:
