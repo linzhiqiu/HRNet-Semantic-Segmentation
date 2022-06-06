@@ -61,6 +61,7 @@ def train_all(config, epoch, num_epoch, epoch_iters, base_lr, num_iters,
         labels_t_1_v1 = labels_t_1_v1.long().cuda()
         labels_t_1_v2 = labels_t_1_v2.long().cuda()
         
+        model.zero_grad()
         loss = model(images_t_0, images_t_1,
                     labels_t_0_selftrain,
                     labels_t_0_v1,
@@ -74,7 +75,6 @@ def train_all(config, epoch, num_epoch, epoch_iters, base_lr, num_iters,
         else:
             reduced_loss = loss
 
-        model.zero_grad()
         loss.backward()
         optimizer.step()
 

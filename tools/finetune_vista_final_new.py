@@ -81,13 +81,13 @@ def main():
     if args.samples == 2500:
         prev_model_path = os.path.join("output/vista_v1_2/2500_half_0", 'final_state.pth')
         if args.loss == 'lpl':
-            final_output_dir = os.path.join(final_output_dir, f'2500_selftrain_{args.strategy}_loss_{args.loss}_double_{args.double_weight}_new')
+            final_output_dir = os.path.join(final_output_dir, f'2500_selftrain_{args.strategy}_loss_{args.loss}_double_{args.double_weight}_correctgrad')
             # final_output_dir = os.path.join(final_output_dir, f'2500_selftrain_{args.strategy}_loss_{args.loss}_double_{args.double_weight}')
         else:
-            final_output_dir = os.path.join(final_output_dir, f'2500_selftrain_{args.strategy}_loss_{args.loss}_double_{args.double_weight}_new')
+            final_output_dir = os.path.join(final_output_dir, f'2500_selftrain_{args.strategy}_loss_{args.loss}_double_{args.double_weight}_correctgrad')
     elif args.sample == 5000:
         prev_model_path = os.path.join("output/vista_v1_2/half_0", 'final_state.pth')
-        final_output_dir = os.path.join(final_output_dir, f'selftrain_{args.strategy}_loss_{args.loss}_double_{args.double_weight}_new')
+        final_output_dir = os.path.join(final_output_dir, f'selftrain_{args.strategy}_loss_{args.loss}_double_{args.double_weight}_correctgrad')
     
     logger.info(pprint.pformat(args))
     logger.info(config)
