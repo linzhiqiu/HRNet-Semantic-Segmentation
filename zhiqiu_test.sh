@@ -253,12 +253,26 @@ MeanIU:  0.3123, Pixel_Acc:  0.8983,         Mean_Acc:  0.3927 CUDA_VISIBLE_DEVI
 (running) torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/finetune_vista_final_new.py --strategy filtering --samples 2500 --loss joint --cfg experiments/vista_v1_2_5000/2500_finetune.yaml 
 (running) torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/finetune_vista_final_new.py --strategy conditioning --samples 2500 --loss joint --cfg experiments/vista_v1_2_5000/2500_finetune.yaml 
 
-CUDA_VISIBLE_DEVICES=1,0,2,3,4,5,6,7 python tools/test_vista.py --mode two_head --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune/2500_selftrain_naive_loss_joint_double_False_correctgrad/final_state.pth
-CUDA_VISIBLE_DEVICES=1,0,2,3,4,5,6,7 python tools/test_vista.py --mode two_head --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune/2500_selftrain_filtering_loss_joint_double_False_correctgrad/final_state.pth
-CUDA_VISIBLE_DEVICES=1,0,2,3,4,5,6,7 python tools/test_vista.py --mode two_head --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune/2500_selftrain_conditioning_loss_joint_double_False_correctgrad/final_state.pth
+MeanIU:  0.3109, Pixel_Acc:  0.8970,         Mean_Acc:  0.3842, CUDA_VISIBLE_DEVICES=1,0,2,3,4,5,6,7 python tools/test_vista.py --mode two_head --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune/2500_selftrain_naive_loss_joint_double_False_correctgrad/final_state.pth
+MeanIU:  0.3157, Pixel_Acc:  0.8994,         Mean_Acc:  0.3988, CUDA_VISIBLE_DEVICES=1,0,2,3,4,5,6,7 python tools/test_vista.py --mode two_head --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune/2500_selftrain_filtering_loss_joint_double_False_correctgrad/final_state.pth
+MeanIU:  0.3150, Pixel_Acc:  0.8988,         Mean_Acc:  0.3976 CUDA_VISIBLE_DEVICES=1,0,2,3,4,5,6,7 python tools/test_vista.py --mode two_head --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune/2500_selftrain_conditioning_loss_joint_double_False_correctgrad/final_state.pth
 
 
 # 18000
-torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/train_vista.py --cfg experiments/vista_v1_2_18000/9000_half_0.yaml 
-torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/train_vista.py --cfg experiments/vista_v2_0_18000/9000_half_1.yaml 
-torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/train_vista.py --cfg experiments/vista_v2_0_18000/9000_all.yaml 
+(running-trinity) torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/train_vista.py --cfg experiments/vista_v1_2_18000/9000_half_0.yaml 
+(running) /project_data/ramanan/mengtial/scripts/vnice/vnice.sh torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/train_vista.py --cfg experiments/vista_v2_0_18000/9000_half_1.yaml 
+(running) /project_data/ramanan/mengtial/scripts/vnice/vnice.sh torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/train_vista.py --cfg experiments/vista_v2_0_18000/9000_half_0.yaml 
+(running) /project_data/ramanan/mengtial/scripts/vnice/vnice.sh torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/train_vista.py --cfg experiments/vista_v2_0_18000/9000_all.yaml 
+
+#t0 performance
+CUDA_VISIBLE_DEVICES=2,1,0,3,4,5,6,7 python tools/test_vista.py --cfg experiments/vista_v1_2_5000/2500_half_0.yaml TEST.MODEL_FILE output/vista_v1_2/9000_half_0/final_state.pth
+
+# t1 performance
+CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python tools/test_vista.py --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/9000_half_1/final_state.pth
+CUDA_VISIBLE_DEVICES=1,0,2,3,4,5,6,7 python tools/test_vista.py --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/9000_half_0/final_state.pth
+CUDA_VISIBLE_DEVICES=1,0,2,3,4,5,6,7 python tools/test_vista.py --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/9000_all/final_state.pth
+
+# finetunePrev
+(running) torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/finetune_vista_18000.py --cfg experiments/vista_v1_2_18000/9000_finetune.yaml --mode upper
+(running) torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/finetune_vista_18000.py --cfg experiments/vista_v1_2_18000/9000_finetune.yaml --mode half_0
+(running) torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/finetune_vista_18000.py --cfg experiments/vista_v1_2_18000/9000_finetune.yaml --mode half_1
