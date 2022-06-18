@@ -48,7 +48,7 @@ def parse_args():
                         default=None,
                         nargs=argparse.REMAINDER)
     parser.add_argument("--strategy", type=str, default='none', choices=['none', 'naive', 'filtering', 'conditioning']) 
-    parser.add_argument("--samples", type=int, default=2500, choices=[2500, 5000]) 
+    parser.add_argument("--samples", type=int, default=2500, choices=[2500, 5000, 9000]) 
     parser.add_argument("--loss", type=str, default='joint', choices=['joint', 'lpl']) 
     parser.add_argument("--double_weight", type=bool, default=False) 
 
@@ -85,10 +85,12 @@ def main():
             # final_output_dir = os.path.join(final_output_dir, f'2500_selftrain_{args.strategy}_loss_{args.loss}_double_{args.double_weight}')
         else:
             final_output_dir = os.path.join(final_output_dir, f'2500_selftrain_{args.strategy}_loss_{args.loss}_double_{args.double_weight}_correctgrad')
-    elif args.sample == 5000:
+    elif args.samples == 5000:
         prev_model_path = os.path.join("output/vista_v1_2/half_0", 'final_state.pth')
         final_output_dir = os.path.join(final_output_dir, f'selftrain_{args.strategy}_loss_{args.loss}_double_{args.double_weight}_correctgrad')
-    
+    elif args.samples == 9000:
+        prev_model_path = os.path.join("output/vista_v1_2/9000_half_0", 'final_state.pth')
+        final_output_dir = os.path.join(final_output_dir, f'9000_selftrain_{args.strategy}_loss_{args.loss}_double_{args.double_weight}_correctgrad')
     logger.info(pprint.pformat(args))
     logger.info(config)
 

@@ -42,7 +42,7 @@ def parse_args():
                         help="Modify config options using the command-line",
                         default=None,
                         nargs=argparse.REMAINDER)
-    parser.add_argument("--samples", type=int, default=2500, choices=[2500, 5000]) 
+    parser.add_argument("--samples", type=int, default=2500, choices=[2500, 5000, 9000]) 
     parser.add_argument("--strategy", type=str, default='none', choices=['none', 'filtering', 'conditioning']) 
 
     args = parser.parse_args()
@@ -80,6 +80,8 @@ def main():
         model_state_file = "output/vista_v2_0/2500_finetune/2500_finetune_on_half_1/final_state.pth"
     elif args.samples == 5000:
         model_state_file = "output/vista_v2_0/finetune/finetune_on_half_1/final_state.pth"
+    elif args.samples == 9000:
+        model_state_file = "output/vista_v2_0/9000_finetune/9000_finetune_on_half_1/final_state.pth"
     
     logger.info('=> loading model from {}'.format(model_state_file))
     
