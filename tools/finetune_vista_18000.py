@@ -77,7 +77,7 @@ def main():
     mode = args.mode
     
     prev_model_path = os.path.join("output/vista_v1_2/9000_half_0", 'final_state.pth')
-    final_output_dir = os.path.join(final_output_dir, f'9000_finetune_on_{mode}')
+    final_output_dir = os.path.join(final_output_dir, f'9000_finetune_on_{mode}_second_run')
             
     logger.info(pprint.pformat(args))
     logger.info(config)

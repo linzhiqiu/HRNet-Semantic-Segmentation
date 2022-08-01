@@ -423,7 +423,7 @@ def save_self_train_pred(pred, label, pred_path, edge_matrix, strategy):
 
 def self_train_hard(config, test_dataset, testloader, model,
                     save_for_self_train="", train_dir_path='training/images/', label_dir_path='training/v1.2/',
-                    root='/project_data/ramanan/zhiqiu/mapillary_vista/',
+                    root='/project_data/ramanan/zhiqiu/mapillary_vistas/',
                     edge_matrix=None, strategy='none'):
     if len(save_for_self_train) > 0:
         lst_save_path = f"{save_for_self_train}.lst"

@@ -136,6 +136,9 @@ CUDA_VISIBLE_DEVICES=7,1,2,3,4,5,6,0 python tools/test_vista.py --cfg experiment
   python tools/self_train_test.py --cfg experiments/vista_v1_2_5000/2500_finetune.yaml --samples 2500 --strategy none
   python tools/self_train_test.py --cfg experiments/vista_v1_2_5000/2500_finetune.yaml --samples 2500 --strategy filtering
   python tools/self_train_test.py --cfg experiments/vista_v1_2_5000/2500_finetune.yaml --samples 2500 --strategy conditioning
+  python tools/self_train_test.py --cfg experiments/vista_v1_2_18000/9000_finetune.yaml --samples 9000 --strategy none
+  python tools/self_train_test.py --cfg experiments/vista_v1_2_18000/9000_finetune.yaml --samples 9000 --strategy filtering
+  python tools/self_train_test.py --cfg experiments/vista_v1_2_18000/9000_finetune.yaml --samples 9000 --strategy conditioning
 
 # consistent testing
 (0.3021) CUDA_VISIBLE_DEVICES=6,1,2,3,4,5,0,7 python tools/test_vista.py --mode two_head --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune/2500_two_head_consistent/final_state.pth
@@ -265,12 +268,12 @@ MeanIU:  0.3150, Pixel_Acc:  0.8988,         Mean_Acc:  0.3976 CUDA_VISIBLE_DEVI
 (running) /project_data/ramanan/mengtial/scripts/vnice/vnice.sh torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/train_vista.py --cfg experiments/vista_v2_0_18000/9000_all.yaml 
 
 #t0 performance
-CUDA_VISIBLE_DEVICES=2,1,0,3,4,5,6,7 python tools/test_vista.py --cfg experiments/vista_v1_2_5000/2500_half_0.yaml TEST.MODEL_FILE output/vista_v1_2/9000_half_0/final_state.pth
+'mean_IoU': 0.44139174714573576, 'pixel_acc': 0.9066033107288457, 'mean_acc': 0.5424515076849, CUDA_VISIBLE_DEVICES=2,1,0,3,4,5,6,7 python tools/test_vista.py --cfg experiments/vista_v1_2_5000/2500_half_0.yaml TEST.MODEL_FILE output/vista_v1_2/9000_half_0/final_state.pth
 
 # t1 performance
-MeanIU:  0.3283, Pixel_Acc:  0.9053,         Mean_Acc:  0.4068 CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python tools/test_vista.py --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/9000_half_1/final_state.pth
-MeanIU:  0.3382, Pixel_Acc:  0.9089,         Mean_Acc:  0.4258 CUDA_VISIBLE_DEVICES=1,0,2,3,4,5,6,7 python tools/test_vista.py --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/9000_half_0/final_state.pth
-MeanIU:  0.4414, Pixel_Acc:  0.9066,         Mean_Acc:  0.5425 CUDA_VISIBLE_DEVICES=1,0,2,3,4,5,6,7 python tools/test_vista.py --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/9000_all/final_state.pth
+'mean_IoU': 0.328312594952233 'pixel_acc': 0.9053123580544007, 'mean_acc': 0.4067558122386495, MeanIU:  0.3283, Pixel_Acc:  0.9053,         Mean_Acc:  0.4068 CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python tools/test_vista.py --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/9000_half_1/final_state.pth
+MeanIU:  0.3344, Pixel_Acc:  0.9044,         Mean_Acc:  0.4196 CUDA_VISIBLE_DEVICES=1,0,2,3,4,5,6,7 python tools/test_vista.py --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/9000_half_0/final_state.pth
+'mean_IoU': 0.3382167656536317,'pixel_acc': 0.9088853543296879, 'mean_acc': 0.42582476650901113, CUDA_VISIBLE_DEVICES=1,0,2,3,4,5,6,7 python tools/test_vista.py --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/9000_all/final_state.pth
 
 # finetunePrev
 (running) torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/finetune_vista_18000.py --cfg experiments/vista_v1_2_18000/9000_finetune.yaml --mode upper
@@ -289,29 +292,64 @@ CUDA_VISIBLE_DEVICES=2,1,0,3,4,5,6,7 python tools/self_train.py --cfg experiment
 
 
 # combining all and 18000
-() torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/finetune_vista_final_new.py --strategy none --samples 9000 --loss joint --cfg experiments/vista_v1_2_18000/9000_finetune.yaml 
-() torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/finetune_vista_final_new.py --strategy naive --samples 9000 --loss joint --cfg experiments/vista_v1_2_18000/9000_finetune.yaml 
-() torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/finetune_vista_final_new.py --strategy filtering --samples 9000 --loss joint --cfg experiments/vista_v1_2_18000/9000_finetune.yaml 
-() torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/finetune_vista_final_new.py --strategy conditioning --samples 9000 --loss joint --cfg experiments/vista_v1_2_18000/9000_finetune.yaml 
-() torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/finetune_vista_final_new.py --strategy none --samples 9000 --loss lpl --cfg experiments/vista_v1_2_18000/9000_finetune.yaml 
-() torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/finetune_vista_final_new.py --strategy naive --samples 9000 --loss lpl --cfg experiments/vista_v1_2_18000/9000_finetune.yaml 
-() torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/finetune_vista_final_new.py --strategy filtering --samples 9000 --loss lpl --cfg experiments/vista_v1_2_18000/9000_finetune.yaml 
-() torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/finetune_vista_final_new.py --strategy conditioning --samples 9000 --loss lpl --cfg experiments/vista_v1_2_18000/9000_finetune.yaml 
+(done) torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/finetune_vista_final_new.py --strategy none --samples 9000 --loss joint --cfg experiments/vista_v1_2_18000/9000_finetune.yaml 
+(running autobot) torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/finetune_vista_final_new.py --strategy naive --samples 9000 --loss joint --cfg experiments/vista_v1_2_18000/9000_finetune.yaml 
+(running autobot) torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/finetune_vista_final_new.py --strategy filtering --samples 9000 --loss joint --cfg experiments/vista_v1_2_18000/9000_finetune.yaml 
+(running trinity) torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/finetune_vista_final_new.py --strategy conditioning --samples 9000 --loss joint --cfg experiments/vista_v1_2_18000/9000_finetune.yaml 
+(done) torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/finetune_vista_final_new.py --strategy none --samples 9000 --loss lpl --cfg experiments/vista_v1_2_18000/9000_finetune.yaml 
+(running autobot) torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/finetune_vista_final_new.py --strategy naive --samples 9000 --loss lpl --cfg experiments/vista_v1_2_18000/9000_finetune.yaml 
+(running trinity) /data3/shared/scripts/vnice/vnice.sh torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/finetune_vista_final_new.py --strategy filtering --samples 9000 --loss lpl --cfg experiments/vista_v1_2_18000/9000_finetune.yaml 
+(done) /data3/shared/scripts/vnice/vnice.sh torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/finetune_vista_final_new.py --strategy conditioning --samples 9000 --loss lpl --cfg experiments/vista_v1_2_18000/9000_finetune.yaml 
 
-CUDA_VISIBLE_DEVICES=1,0,2,3,4,5,6,7 python tools/test_vista.py --cfg experiments/vista_v1_2_18000/9000_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/9000_finetune/9000_selftrain_none_loss_lpl_double_False_correctgrad/final_state.pth
-CUDA_VISIBLE_DEVICES=1,0,2,3,4,5,6,7 python tools/test_vista.py --cfg experiments/vista_v1_2_18000/9000_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/9000_finetune/9000_selftrain_naive_loss_lpl_double_False_correctgrad/final_state.pth
-CUDA_VISIBLE_DEVICES=1,0,2,3,4,5,6,7 python tools/test_vista.py --cfg experiments/vista_v1_2_18000/9000_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/9000_finetune/9000_selftrain_filtering_loss_lpl_double_False_correctgrad/final_state.pth
-CUDA_VISIBLE_DEVICES=1,0,2,3,4,5,6,7 python tools/test_vista.py --cfg experiments/vista_v1_2_18000/9000_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/9000_finetune/9000_selftrain_conditioning_loss_lpl_double_False_correctgrad/final_state.pth
-CUDA_VISIBLE_DEVICES=1,0,2,3,4,5,6,7 python tools/test_vista.py --mode two_head --cfg experiments/vista_v1_2_18000/9000_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/9000_finetune/9000_selftrain_none_loss_joint_double_False_correctgrad/final_state.pth
-CUDA_VISIBLE_DEVICES=1,0,2,3,4,5,6,7 python tools/test_vista.py --mode two_head --cfg experiments/vista_v1_2_18000/9000_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/9000_finetune/9000_selftrain_naive_loss_joint_double_False_correctgrad/final_state.pth
-CUDA_VISIBLE_DEVICES=1,0,2,3,4,5,6,7 python tools/test_vista.py --mode two_head --cfg experiments/vista_v1_2_18000/9000_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/9000_finetune/9000_selftrain_filtering_loss_joint_double_False_correctgrad/final_state.pth
-CUDA_VISIBLE_DEVICES=1,0,2,3,4,5,6,7 python tools/test_vista.py --mode two_head --cfg experiments/vista_v1_2_18000/9000_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/9000_finetune/9000_selftrain_conditioning_loss_joint_double_False_correctgrad/final_state.pth
+MeanIU:  0.3504, Pixel_Acc:  0.9077,         Mean_Acc:  0.4444, CUDA_VISIBLE_DEVICES=1,0,2,3,4,5,6,7 python tools/test_vista.py --cfg experiments/vista_v1_2_18000/9000_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/9000_finetune/9000_selftrain_none_loss_lpl_double_False_correctgrad/final_state.pth
+MeanIU:  0.3597, Pixel_Acc:  0.9099,         Mean_Acc:  0.4467 CUDA_VISIBLE_DEVICES=1,0,2,3,4,5,6,7 python tools/test_vista.py --cfg experiments/vista_v1_2_18000/9000_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/9000_finetune/9000_selftrain_naive_loss_lpl_double_False_correctgrad/final_state.pth
+MeanIU:  0.3612, Pixel_Acc:  0.9103,         Mean_Acc:  0.4530,CUDA_VISIBLE_DEVICES=2,1,0,3,4,5,6,7 python tools/test_vista.py --cfg experiments/vista_v1_2_18000/9000_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/9000_finetune/9000_selftrain_filtering_loss_lpl_double_False_correctgrad/final_state.pth
+MeanIU:  0.3547, Pixel_Acc:  0.9088,         Mean_Acc:  0.4485, CUDA_VISIBLE_DEVICES=3,1,2,0,4,5,6,7 python tools/test_vista.py --cfg experiments/vista_v1_2_18000/9000_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/9000_finetune/9000_selftrain_conditioning_loss_lpl_double_False_correctgrad/final_state.pth
+MeanIU:  0.3540, Pixel_Acc:  0.9096,         Mean_Acc:  0.4469, CUDA_VISIBLE_DEVICES=2,1,0,3,4,5,6,7 python tools/test_vista.py --mode two_head --cfg experiments/vista_v1_2_18000/9000_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/9000_finetune/9000_selftrain_none_loss_joint_double_False_correctgrad/final_state.pth
+MeanIU:  0.3572, Pixel_Acc:  0.9081,         Mean_Acc:  0.4402 CUDA_VISIBLE_DEVICES=1,0,2,3,4,5,6,7 python tools/test_vista.py --mode two_head --cfg experiments/vista_v1_2_18000/9000_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/9000_finetune/9000_selftrain_naive_loss_joint_double_False_correctgrad/final_state.pth
+MeanIU:  0.3606, Pixel_Acc:  0.9114,         Mean_Acc:  0.4465, CUDA_VISIBLE_DEVICES=1,0,2,3,4,5,6,7 python tools/test_vista.py --mode two_head --cfg experiments/vista_v1_2_18000/9000_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/9000_finetune/9000_selftrain_filtering_loss_joint_double_False_correctgrad/final_state.pth
+MeanIU:  0.3570, Pixel_Acc:  0.9091,         Mean_Acc:  0.4512CUDA_VISIBLE_DEVICES=1,0,2,3,4,5,6,7 python tools/test_vista.py --mode two_head --cfg experiments/vista_v1_2_18000/9000_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/9000_finetune/9000_selftrain_conditioning_loss_joint_double_False_correctgrad/final_state.pth
 
 # ssl only 18000
-(rsync first?) torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/finetune_selftrain_vista_18000.py --cfg experiments/vista_v1_2_18000/9000_finetune.yaml --strategy conditioning
-(rsync first?) torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/finetune_selftrain_vista_18000.py --cfg experiments/vista_v1_2_18000/9000_finetune.yaml --strategy none
-(rsync first?) torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/finetune_selftrain_vista_18000.py --cfg experiments/vista_v1_2_18000/9000_finetune.yaml --strategy filtering
+(running autobot) torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/finetune_selftrain_vista_18000.py --cfg experiments/vista_v1_2_18000/9000_finetune.yaml --strategy conditioning
+(running trinity-2-5) torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/finetune_selftrain_vista_18000.py --cfg experiments/vista_v1_2_18000/9000_finetune.yaml --strategy none
+(running autobot) torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/finetune_selftrain_vista_18000.py --cfg experiments/vista_v1_2_18000/9000_finetune.yaml --strategy filtering
 
-python tools/test_vista.py --cfg experiments/vista_v1_2_18000/9000_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/9000_finetune/9000_selftrain_conditioning/final_state.pth
-CUDA_VISIBLE_DEVICES=6,1,2,3,4,5,0,7 python tools/test_vista.py --cfg experiments/vista_v1_2_18000/9000_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/9000_finetune/9000_selftrain_none/final_state.pth
-CUDA_VISIBLE_DEVICES=7,1,2,3,4,5,6,0 python tools/test_vista.py --cfg experiments/vista_v1_2_18000/9000_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/9000_finetune/9000_selftrain_filtering/final_state.pth
+# wrong result with only pseudo-label
+#MeanIU:  0.3239, Pixel_Acc:  0.9034,         Mean_Acc:  0.3944, CUDA_VISIBLE_DEVICES=6,1,2,3,4,5,0,7 python tools/test_vista.py --cfg experiments/vista_v1_2_18000/9000_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/9000_finetune/9000_selftrain_none/final_state.pth
+#MeanIU:  0.3384, Pixel_Acc:  0.9085,         Mean_Acc:  0.4103, CUDA_VISIBLE_DEVICES=7,1,2,3,4,5,6,0 python tools/test_vista.py --cfg experiments/vista_v1_2_18000/9000_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/9000_finetune/9000_selftrain_filtering/final_state.pth
+#MeanIU:  0.3361, Pixel_Acc:  0.9042,         Mean_Acc:  0.4180, Class IoU: python tools/test_vista.py --cfg experiments/vista_v1_2_18000/9000_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/9000_finetune/9000_selftrain_conditioning/final_state.pth
+
+# correct result
+MeanIU:  0.3268, Pixel_Acc:  0.9036,         Mean_Acc:  0.3982 CUDA_VISIBLE_DEVICES=6,1,2,3,4,5,0,7 python tools/test_vista.py --cfg experiments/vista_v1_2_18000/9000_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/9000_finetune/9000_selftrain_none/final_state.pth
+MeanIU:  0.3496, Pixel_Acc:  0.9108,         Mean_Acc:  0.4255,CUDA_VISIBLE_DEVICES=7,1,2,3,4,5,6,0 python tools/test_vista.py --cfg experiments/vista_v1_2_18000/9000_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/9000_finetune/9000_selftrain_filtering/final_state.pth
+MeanIU:  0.3529, Pixel_Acc:  0.9097,         Mean_Acc:  0.4360 python tools/test_vista.py --cfg experiments/vista_v1_2_18000/9000_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/9000_finetune/9000_selftrain_conditioning/final_state.pth
+
+
+# finetunePrev second run
+(running) torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/finetune_vista_18000.py --cfg experiments/vista_v1_2_18000/9000_finetune.yaml --mode upper
+(running) torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/finetune_vista_18000.py --cfg experiments/vista_v1_2_18000/9000_finetune.yaml --mode half_0
+(running) torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/finetune_vista_18000.py --cfg experiments/vista_v1_2_18000/9000_finetune.yaml --mode half_1
+
+# test 
+CUDA_VISIBLE_DEVICES=3,1,2,0,4,5,6,7 python tools/test_vista.py --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/9000_finetune/9000_finetune_on_upper_second_run/final_state.pth
+MeanIU:  0.3501, Pixel_Acc:  0.9050,         Mean_Acc:  0.4329, CUDA_VISIBLE_DEVICES=4,1,2,3,0,5,6,7 python tools/test_vista.py --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/9000_finetune/9000_finetune_on_half_0_second_run/final_state.pth
+MeanIU:  0.3408, Pixel_Acc:  0.9052,         Mean_Acc:  0.4184, CUDA_VISIBLE_DEVICES=5,1,2,3,4,0,6,7 python tools/test_vista.py --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/9000_finetune/9000_finetune_on_half_1_second_run/final_state.pth
+
+
+
+
+###### New Upper Bound
+# combining all and 18000
+(done) torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/finetune_vista_final_new_upperbound.py --strategy none --samples 9000 --loss joint --cfg experiments/vista_v1_2_18000/9000_finetune.yaml 
+(done) torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/finetune_vista_final_new_upperbound.py --strategy none --samples 9000 --loss lpl --cfg experiments/vista_v1_2_18000/9000_finetune.yaml 
+
+CUDA_VISIBLE_DEVICES=1,0,2,3,4,5,6,7 python tools/test_vista.py --cfg experiments/vista_v1_2_18000/9000_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/9000_finetune/9000_selftrain_none_loss_lpl_double_False_newupper/final_state.pth
+CUDA_VISIBLE_DEVICES=2,1,0,3,4,5,6,7 python tools/test_vista.py --mode two_head --cfg experiments/vista_v1_2_18000/9000_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/9000_finetune/9000_selftrain_none_loss_joint_double_False_newupper/final_state.pth
+
+# combining all and 5000
+(done) torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/finetune_vista_final_new_upperbound.py --strategy none --samples 2500 --loss joint --cfg experiments/vista_v1_2_5000/2500_finetune.yaml 
+(done) torchrun --standalone --nnodes=1 --nproc_per_node=8 tools/finetune_vista_final_new_upperbound.py --strategy none --samples 2500 --loss lpl --cfg experiments/vista_v1_2_5000/2500_finetune.yaml 
+
+CUDA_VISIBLE_DEVICES=1,0,2,3,4,5,6,7 python tools/test_vista.py --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune/2500_selftrain_none_loss_lpl_double_False_newupper/final_state.pth
+CUDA_VISIBLE_DEVICES=2,1,0,3,4,5,6,7 python tools/test_vista.py --mode two_head --cfg experiments/vista_v1_2_5000/2500_finetune.yaml TEST.MODEL_FILE output/vista_v2_0/2500_finetune/2500_selftrain_none_loss_joint_double_False_newupper/final_state.pth

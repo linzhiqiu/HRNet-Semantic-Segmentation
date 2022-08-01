@@ -236,6 +236,64 @@ class MyModelNew(nn.Module):
     loss = labeled_loss + coarse_loss + ssl_loss
     return torch.unsqueeze(loss,0)
 
+class MyModelUpperBoundNew(nn.Module):
+  def __init__(self, model, loss, strategy, loss_0_nll, loss_0_ce, loss_1_ce, edge_matrix_path="./edge_matrix_116.pt"):
+    super(MyModelUpperBoundNew, self).__init__()
+    self.use_two_head = loss == 'joint' # joint, lpl
+    self.use_ssl = strategy != 'none' # strategy can be none, naive, filtering, conditioning
+    
+    self.model = model
+    self.loss_0_nll = loss_0_nll 
+    self.loss_0_ce = loss_0_ce 
+    self.loss_1_ce = loss_1_ce 
+    self.edge_matrix = torch.load(edge_matrix_path).float().cuda()
+    self.log_softmax = torch.nn.LogSoftmax(dim=1)
+    self.softmax = torch.nn.Softmax(dim=1)
+
+  def forward(self, inputs_t_0, inputs_t_1,
+              labels_t_0_v1,
+              labels_t_0_v2,
+              labels_t_1_v1,
+              labels_t_1_v2):
+    # First compute labeled loss
+    if self.use_two_head:
+      outputs_t_1_v2 = self.model(inputs_t_1, time=1)
+      outputs_t_0_v2 = self.model(inputs_t_0, time=1)
+    else:
+      outputs_t_1_v2 = self.model(inputs_t_1)
+      outputs_t_0_v2 = self.model(inputs_t_0)
+    labeled_loss = self.loss_1_ce(outputs_t_1_v2, labels_t_1_v2) + self.loss_1_ce(outputs_t_0_v2, labels_t_0_v2)
+    
+    if self.use_two_head:
+      labeled_loss.backward()
+      del outputs_t_0_v2
+      del outputs_t_1_v2
+      torch.cuda.empty_cache()
+      outputs_t_0_v1 = self.model(inputs_t_0, time=0)
+      outputs_t_1_v1 = self.model(inputs_t_1, time=0)
+    else:
+      labeled_loss.backward(retain_graph=True)
+      outputs_t_1_v1 = [outputs_t_1_v2[i].clone() for i in range(len(outputs_t_1_v2))]
+      outputs_t_0_v1 = [outputs_t_0_v2[i].clone() for i in range(len(outputs_t_0_v2))]
+    
+    if self.use_two_head:
+      coarse_loss = self.loss_0_ce(outputs_t_0_v1, labels_t_0_v1) + self.loss_0_ce(outputs_t_1_v1, labels_t_1_v1)
+    else:
+      for i in range(len(outputs_t_0_v1)):
+        outputs_t_0_v1[i] = outputs_t_0_v1[i] - outputs_t_0_v1[i].max(1)[0].unsqueeze(1)
+        outputs_t_0_v1[i] = self.softmax(outputs_t_0_v1[i])
+        outputs_t_0_v1[i] = torch.log(torch.matmul(outputs_t_0_v1[i].transpose(1,3), self.edge_matrix).transpose(1,3)  + 1e-20)
+      for i in range(len(outputs_t_1_v1)):
+        outputs_t_1_v1[i] = outputs_t_1_v1[i] - outputs_t_1_v1[i].max(1)[0].unsqueeze(1)
+        outputs_t_1_v1[i] = self.softmax(outputs_t_1_v1[i])
+        outputs_t_1_v1[i] = torch.log(torch.matmul(outputs_t_1_v1[i].transpose(1,3), self.edge_matrix).transpose(1,3)  + 1e-20)
+      coarse_loss = self.loss_0_nll(outputs_t_0_v1, labels_t_0_v1) + self.loss_0_nll(outputs_t_1_v1, labels_t_1_v1)
+    #   coarse_loss = 0.
+    
+    if self.use_ssl:
+      raise NotImplementedError()
+    return torch.unsqueeze(coarse_loss,0)
+
 
 class AverageMeter(object):
     """Computes and stores the average and current value"""

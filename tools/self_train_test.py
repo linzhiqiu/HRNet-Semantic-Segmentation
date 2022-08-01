@@ -42,7 +42,7 @@ def parse_args():
                         help="Modify config options using the command-line",
                         default=None,
                         nargs=argparse.REMAINDER)
-    parser.add_argument("--samples", type=int, default=2500, choices=[2500, 5000]) 
+    parser.add_argument("--samples", type=int, default=2500, choices=[2500, 5000, 9000]) 
     parser.add_argument("--strategy", type=str, default='none', choices=['none', 'filtering', 'conditioning']) 
 
     args = parser.parse_args()
